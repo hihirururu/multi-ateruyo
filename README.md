@@ -13,13 +13,7 @@
 ## 遊び方
 
 ### claude.ai で遊ぶ（いちばん手軽）
-公開中: https://claude.ai/artifact/4Z2f7uuA5g6AGQ7fqJGy6R （Claude へのログインが必要です。AI を使うには、サインインして開いてください）
-
-自分で置くときは:
-1. claude.ai で新しいチャットを始めます。
-2. `ateruyo_artifact.html` を添付して、次のように頼みます。
-   > 添付したHTMLを、一字一句変えずにそのままHTMLのArtifactとして表示してください。
-3. 画面の左下に「写しちがい」と出たら、書き写しで中身が変わっています。「省略せず、そのまま全部」と頼み直してください。
+https://claude.ai/artifact/4Z2f7uuA5g6AGQ7fqJGy6R （Claude にログインして開いてください）
 
 ### 自分の PC で遊ぶ（立ち絵つき）
 [Claude Code](https://claude.com/claude-code) にログイン済みで、`claude` コマンドが使えることが前提です。
@@ -44,7 +38,7 @@ AI の安全確認に止められる依頼を、くり返し送らないため�
 | ファイル | 中身 |
 |---|---|
 | `ateruyo.html` | ゲーム本体（立ち絵入り。手元で遊ぶ用） |
-| `ateruyo_artifact.html` | claude.ai に出す版（`python tools/build_artifact.py` で `ateruyo.html` から作ります。手で直さないでください） |
+| `ateruyo_artifact.html` | claude.ai に出す版。claude.ai のチャットに添付すると、自分の Artifact として置けます（`python tools/build_artifact.py` で `ateruyo.html` から作ります。手で直さないでください） |
 | `server.py` | 手元で遊ぶときのサーバー（`claude -p` を呼びます） |
 | `tools/` | 確かめ用の道具 |
 
