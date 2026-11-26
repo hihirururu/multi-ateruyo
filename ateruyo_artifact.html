@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>複数人アテルーヨー</title>
+<style>
+:root{
+  --bg:#141a2b; --bg2:#1c2439; --bg3:#0e1322; --line:#2c3652; --ink:#eef1f8; --dim:#8f9abb;
+  --paper:#f6f1e6; --ok:#2f9e5b; --warn:#d9a33a;
+  --O:#d97757; --S:#3f9fb5;
+  --c-y:#2f9e5b; --c-py:#8fcf9f; --c-m:#c9c4b6; --c-pn:#eaa59a; --c-n:#c8473f; --c-u:#8a84a8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;font-size:15px;line-height:1.4}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:var(--bg2);border-radius:0;padding:.35em .8em}
+button:hover{filter:brightness(1.2)}
+button:disabled{opacity:.4;cursor:default;filter:none}
+input{min-width:0}
+#app{height:100%;display:flex;flex-direction:column;overflow:hidden}
+#main{flex:1;min-height:0;display:grid}
+.hidden{display:none!important}
+
+
+#setup{display:grid;grid-template-columns:clamp(280px,26vw,400px) minmax(0,1fr);min-height:0}
+#compose{display:flex;flex-direction:column;min-height:0;background:var(--bg2);border-right:2px solid var(--O)}
+#ed{flex:1;min-height:0;display:flex;overflow:hidden;font-size:1.35em;line-height:1.6}
+#gut{flex:0 0 1.6em;background:var(--paper);color:var(--O);font-weight:800;text-align:center;padding:.3em 0;overflow:hidden}
+#gut div{height:1.6em}
+#names{flex:1;resize:none;border:0;outline:none;background:var(--paper);color:#1b2033;font:inherit;font-weight:700;line-height:1.6;padding:.3em .6em;white-space:pre;overflow:auto}
+#names::placeholder{color:#b3a98f;font-weight:400}
+#theme{border:0;border-bottom:1px solid var(--line);outline:none;background:#fff8e6;color:#1b2033;font-weight:800;font-size:1.2em;padding:.45em .6em}
+#theme::placeholder{color:#9a9488;font-weight:400;font-size:.75em}
+#smsg{background:#3a2228;color:#ffd6cf;font-size:.95em}
+#smsg div{padding:.35em .8em;border-top:1px solid #5b3038}
+#smsg:empty{display:none}
+#cost{padding:.3em .6em;font-size:.78em;font-weight:700;line-height:1.35;color:#7a2e12;background:#fde3d4;border-bottom:1px solid var(--line)}
+#sact{display:flex}
+#sact button{font-weight:800;padding:.7em 1em}
+#go{flex:1;background:var(--O);color:#fff;font-size:1.3em}
+#genBtn{background:var(--bg3);color:var(--ink);font-size:1em;border-left:1px solid var(--line)}
+#plist{min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(120,minmax(0,1fr));grid-auto-flow:row dense;grid-auto-rows:minmax(min-content,1fr);background:var(--line);gap:1px}
+#plist button{display:flex;flex-direction:column;justify-content:flex-start;background:var(--paper);color:#1b2033;text-align:left;padding:.3em .6em;font-weight:800;font-size:1.15em;line-height:1.3;overflow-wrap:anywhere}
+#plist button:hover{background:#fff3d6}
+#plist i{font-style:normal;display:inline-block;max-width:100%}#plist .col i{display:block;white-space:nowrap}#plist .col .sp{display:none}#plist .sp{color:var(--O);font-weight:400;margin-left:.35em}#plist button.on .sp{color:#fff}
+#plist button.on{background:var(--O);color:#fff}#plist button.on small{color:#ffe3d6}
+#plist small{display:block;font-weight:400;font-size:.68em;color:#8a8170;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+#game{min-height:0;display:grid;grid-template-columns:clamp(170px,19vw,280px) minmax(0,1fr) clamp(170px,19vw,280px)}
+#tablewrap{overflow:auto;background:var(--paper);color:#222;min-height:0}
+table{border-collapse:collapse;width:100%;table-layout:fixed}
+thead th{position:sticky;top:0;z-index:2;background:#24304d;color:#fff;font-weight:700;padding:.25em .3em;border-right:1px solid #3a4768;text-align:center;vertical-align:middle}
+thead th.q{text-align:left;padding-left:.7em;font-size:1em;font-weight:800;color:#fff}
+thead th .lt{color:#ffd0bd;margin-right:.25em}
+#log.mid thead th{padding:.2em .12em;vertical-align:bottom}#log.mid thead th .lt{display:block;font-size:.65em;margin:0}#log.mid thead th .nm{display:block;word-break:keep-all;overflow-wrap:normal;font-size:var(--nmf,13px);line-height:1.15}#log.mid thead th .bd{display:block;width:fit-content;margin:.15em auto 0}#log.mid thead th.q{vertical-align:top;padding:.3em .4em}#log.mid td.gs.x{text-decoration:line-through}#log.mid td.gs{font-size:var(--gsf,11px);padding:.15em .05em;word-break:keep-all;overflow-wrap:normal;line-height:1.15}
+thead th .nm{font-size:.84em;line-height:1.2;word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance}
+.bd{display:inline-block;font-size:.72em;font-weight:800;padding:0 .35em;margin-left:.2em;color:#fff;vertical-align:.1em}
+.bd.O{background:var(--O)}.bd.S{background:var(--S)}
+.blur{filter:blur(6px);user-select:none}
+col.no{width:2.6em}
+tbody td{border-bottom:1px solid #d9cfb9;border-right:1px solid #d9cfb9;padding:0;vertical-align:middle}
+tbody tr:nth-child(odd) td.q{background:#fbf8f1}
+td.no{text-align:center;color:#fff;font-size:.8em;font-weight:800;font-variant-numeric:tabular-nums}
+td.no.O{background:var(--O)}td.no.S{background:var(--S)}
+td.q{padding:.1em .6em}
+td.q .t{font-weight:700;color:#1b2033;font-size:1.1em;line-height:1.3}
+td.q .s{font-size:.78em;color:#7a705c;margin-top:.05em}
+td.ch{text-align:center;font-weight:900;font-size:var(--sym,20px);line-height:1.2;cursor:pointer;position:relative;padding:0}
+#log.many td.gs{font-size:var(--sym,18px);font-weight:900;padding:0}
+#log.many thead th{padding:.2em 0;font-size:var(--lt,15px)}
+.y{color:#1f7a44}.py{color:#5a9c6c}.m{color:#9a917e}
+.pn{color:#c0786c}.n{color:#b8372f}.u{color:#7d77a0}
+td.ch.dim{background:#eee7d6!important;color:#b9ae94}
+.fix::after{content:"✎";position:absolute;right:.2em;top:0;font-size:.75em}
+tr.inv td.q .t{color:#9a917e;text-decoration:line-through}
+tr.inv.pass td.q .t{text-decoration:none}
+tr.inv td.inv{color:#9a917e;font-size:.85em;text-align:center}
+tr.ans td:not(.no){background:#efe8d8!important}
+tr.ans td.q .t{color:#b5562f}
+tr td.gs{text-align:center;padding:.2em .25em;font-size:.82em;font-weight:700;line-height:1.15;word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance;color:#1b2033}
+tr td.gs.o{color:#1f7a44}
+tr td.gs.x{color:#b8372f;opacity:.75}
+tr td.gs.w{color:#a8761a}
+tr.fut td{background:#ece4d1!important}
+tr.fut td.no{opacity:.45}
+tr.think td.q{background:#fff3c8!important}
+tr.think td.q .t{color:#7a5a0a}
+td.wrap{padding:.15em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(6.2em,1fr));gap:2px}
+.it{display:flex;align-items:stretch;font-size:.78em;font-weight:700;min-height:1.9em;position:relative;cursor:pointer}
+.it i{font-style:normal;color:#b5562f;min-width:1.5em;display:flex;align-items:center;justify-content:center}
+.it span{flex:1;display:flex;align-items:center;justify-content:flex-start;padding:0 .2em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#1b2033}
+.it.o span{color:#1f7a44}.it.x span{color:#b8372f;opacity:.75}.it.w span{color:#a8761a}
+.it span.y{color:#1f7a44}.it span.py{color:#5a9c6c}.it span.m{color:#9a917e}.it span.pn{color:#c0786c}.it span.n{color:#b8372f}.it span.u{color:#7d77a0}
+#tstrip{display:flex;flex-wrap:wrap;background:#24304d;position:sticky;top:0;z-index:2}
+#tstrip div{flex:1 1 auto;padding:.15em .5em;color:#fff;font-size:.9em;font-weight:700;border-right:1px solid #3a4768;border-bottom:1px solid #3a4768;word-break:keep-all;overflow-wrap:anywhere}
+#tstrip div b{color:#ffd0bd;margin-right:.3em}
+
+.side{position:relative;background:linear-gradient(#232c48,#141a2b);overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.side.O{border-right:1px solid var(--line)}.side.S{border-left:1px solid var(--line)}
+.side .nmb{display:flex;align-items:center;gap:.5em;padding:.3em .6em;font-weight:900;font-size:1.05em;color:#fff}
+.side.O .nmb{background:var(--O)}.side.S .nmb{background:var(--S)}
+.side .nmb .cnt{margin-left:auto;font-size:.8em;font-weight:700;font-variant-numeric:tabular-nums}
+.side .nmb .mdl{font-size:.68em;font-weight:500;opacity:.85}
+.side.act .nmb{box-shadow:inset 0 -4px #fff8}
+.side.act .nmb::after{content:"考え中";font-size:.65em;background:#0004;padding:0 .4em;font-weight:700;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.4}}
+.bubble{margin:.5em .5em 0;background:#fff;color:#1b2033;padding:.45em .65em;font-weight:700;font-size:.9em;position:relative;z-index:2;line-height:1.45}
+.side.O .bubble{border:2px solid var(--O)}.side.S .bubble{border:2px solid var(--S)}
+.bubble:empty{display:none}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-9px;width:14px;height:14px;background:#fff;transform:translateX(-50%) rotate(45deg)}
+.side.O .bubble::after{border-right:2px solid var(--O);border-bottom:2px solid var(--O)}
+.side.S .bubble::after{border-right:2px solid var(--S);border-bottom:2px solid var(--S)}
+.review{margin:.5em .5em 0;background:#fdfaf2;color:#1b2033;font-size:.84em;line-height:1.55;position:relative;z-index:2;max-height:66%;overflow:auto}
+.side.O .review{border:2px solid var(--O)}.side.S .review{border:2px solid var(--S)}
+.review .hd{display:flex;align-items:baseline;gap:.5em;color:#fff;padding:.2em .6em;font-weight:800;position:sticky;top:0}
+.side.O .review .hd{background:var(--O)}.side.S .review .hd{background:var(--S)}
+.review .hd .sc{margin-left:auto;font-size:1.25em}
+.review .tx{padding:.35em .6em}
+.review .kn{padding:0 .6em .35em;color:#8a5a2a;font-size:.92em}
+.review .ar{padding:.3em .6em;border-top:1px dashed #d9cfb9;color:#5a4a8a;font-size:.92em}
+.stand{flex:1;min-height:0;display:flex;align-items:flex-end;justify-content:center;margin-top:.3em}
+.stand img{max-width:100%;max-height:100%;object-fit:contain;object-position:bottom}
+.side.S .stand img{transform:scaleX(-1)}
+.stand img.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{opacity:.4;translate:0 6px}100%{opacity:1;translate:0 0}}
+
+#hud{display:flex;flex-wrap:wrap;align-items:center;gap:.25em .5em;text-align:left;font-weight:700}
+#hud #title{font-size:1.05em;color:#fff;margin-right:auto}
+#hud #res{font-weight:900}
+#st{font-size:1em;color:#fff;font-weight:700}#st:empty{display:none}body.ingame #st{display:none}
+#title small{font-size:.8em;color:#ffd0bd;margin-left:.6em}
+#ctl{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px;margin-left:auto}
+#adv{display:flex;flex:1 1 13em;min-width:9em}
+#adv input{flex:1;border:0;outline:none;background:#fff8e6;color:#1b2033;font-weight:700;font-size:.9em;padding:.15em .5em}
+#adv input::placeholder{color:#9a9488;font-weight:400}
+#adv button{background:var(--O);color:#fff;font-size:.82em;font-weight:700;padding:.15em .7em;white-space:nowrap}
+#ctl button{background:#3a4768;color:#fff;padding:.15em .7em;font-size:.82em;font-weight:700;white-space:nowrap}
+#ctl button.main{background:var(--O);font-size:.95em}
+#ctl button.main:disabled{background:#5a3a30;color:#d9c3b9;opacity:1}
+#tstrip #hud{flex:1 1 100%;padding:.25em .5em;border-bottom:1px solid #3a4768}
+
+#pop{position:fixed;z-index:10;background:#1c2439;border:1px solid var(--O);width:min(22em,92vw);box-shadow:0 6px 24px #0008}
+#pop .f{padding:.5em .7em;font-size:.85em;color:#dfe3ef;border-bottom:1px solid var(--line)}
+#pop .f b{color:#ffd0bd}
+#pop .opts{display:grid;grid-template-columns:repeat(3,1fr)}
+#pop .opts button{border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-size:.85em;padding:.5em .2em}
+#pop .opts button.cur{outline:2px solid var(--O);outline-offset:-2px}
+#dbg{position:fixed;left:0;bottom:0;background:#a33;color:#fff;font-size:11px;padding:1px 6px;z-index:20}
+#toast{position:fixed;left:50%;top:3em;transform:translateX(-50%);background:var(--O);color:#fff;padding:.4em 1em;font-weight:700;z-index:30}
+
+@media (max-width:820px){
+  body{font-size:14px}
+  #setup{grid-template-columns:1fr}
+  #setup{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
+  #compose{grid-row:1;border-right:0;border-bottom:2px solid var(--O)}
+  #plist{grid-row:2}
+  #game{grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,9em) minmax(0,1fr)}
+  #tablewrap{grid-column:1/3;grid-row:2}
+  .side .stand{display:none}
+  .review{max-height:none}
+  #ctl{width:100%;order:6}
+  #ctl button{flex:1;padding:.6em}
+}
+/* 立ち絵のない版（claude.ai に出す版）: 両者を表の上の段に左右に並べ、表は横いっぱい。段の高さは中身だけ */
+body.noimg #game{grid-template-columns:1fr 1fr;grid-template-rows:auto minmax(0,1fr)}
+body.noimg #tablewrap{grid-column:1/3;grid-row:2}
+body.noimg .side{background:#fff;max-height:46vh;border:0}
+body.noimg .side.O{border-right:2px solid #24304d}
+body.noimg .stand{display:none}
+body.noimg .bubble{margin:0;padding:.3em .7em;font-size:1em}
+body.noimg .bubble::after{display:none}
+body.noimg .review{margin:0;max-height:none;flex:1;min-height:0;font-size:.9em}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <main id="main">
+    <section id="setup">
+      <div id="compose">
+        <div id="cost">Opus 対 Sonnet、審判も Opus なので、トークンの消費が激しいです。</div>
+        <div id="sact"><button id="go">出題する</button><button id="genBtn">AIに作らせる</button></div>
+        <input id="theme" spellcheck="false" placeholder="テーマを書くとAIがそのテーマで作る">
+        <div id="smsg"></div>
+        <div id="ed"><div id="gut"></div><textarea id="names" spellcheck="false" placeholder="右から選ぶか、1行に1つ書く&#10;&#10;宮本武蔵&#10;大谷翔平"></textarea></div>
+      </div>
+      <div id="plist"></div>
+    </section>
+
+    <section id="game" class="hidden">
+      <div class="side O" id="sideO"><div class="nmb"><span>Opus</span><span class="mdl"></span><span class="cnt"></span></div><div class="bubble"></div><div class="review hidden"></div><div class="stand"><img alt=""></div></div>
+      <div id="tablewrap"><div id="tstrip" class="hidden"></div><table id="log"></table></div>
+      <div class="side S" id="sideS"><div class="nmb"><span>Sonnet</span><span class="mdl"></span><span class="cnt"></span></div><div class="bubble"></div><div class="review hidden"></div><div class="stand"><img alt=""></div></div>
+    </section>
+
+  </main>
+
+  <!-- 問題文・状態・ボタン。対局中は表の見出しの問題文の欄に入れる（下のバーは作らない） -->
+  <nav id="hud"><b id="title"></b><b id="res" class="hidden"></b><span id="st"></span><span id="ctl"></span><span id="adv"><input id="advText" maxlength="80" spellcheck="false" placeholder="OpusとSonnetにアドバイス"><button id="advBtn">送る</button></span></nav>
+</div>
+<div id="pop" class="hidden"></div>
+<div id="dbg" class="hidden"></div>
+<div id="toast" class="hidden"></div>
+
+<script>
+"use strict";
+const SUM = "3czw1170sm";  // 写しちがいの点検。tools/build_artifact.py が、claude.ai に出す版にだけ値を入れる
+const SELF = document.currentScript ? document.currentScript.textContent : "";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// 名前を2行に折るとき、「・」「＝」「（」の切れ目で、行の長さがそろうように折る
+// 見出し・解答のマス用の略称（7〜14人の表）
+// - 8字までの名前はそのまま。長い名前は姓（最後の部分）。「ダ・ヴィンチ」「ド・セシェル」のような前置きの語は姓に付けて残す。ジュニア・頭文字は外す
+// - ふつう名前で呼ぶ人（ナポレオン）は名前。かっこの補足は残す（同じ名前の人と見分けるため）
+const NAME_PARTICLE = /^(ダ|ド|デ|ディ|デル|デラ|ラ|ル|レ|フォン|ファン|ヴァン|ヴォン|オブ|アル|エル|ディ・)$/;
+const CALL_BY_FIRST = /^(ナポレオン)$/;
+const shortName = s => {
+  const full = String(s).trim(), m = full.match(/^(.*?)\s*([（(].*[）)])\s*$/);
+  const base = (m ? m[1] : full).trim(), paren = m ? m[2] : "";
+  const seg = base.split(/[・＝=]/).filter(Boolean);
+  let b = base;
+  if (seg.length > 1 && [...base].length > 8) {
+    const core = seg.filter(x => !/^(ジュニア|シニア|Jr\.?|[A-ZＡ-Ｚ]\.?)$/i.test(x));
+    if (core.length && CALL_BY_FIRST.test(core[0])) b = core[0];
+    else if (core.length) { const k = core.length - 1; b = k > 0 && NAME_PARTICLE.test(core[k - 1]) ? core[k - 1] + "・" + core[k] : core[k]; }
+  }
+  return b + paren;
+};
+// 表に並ぶ名前の略称。略称が重なったら、その名前は略さない
+const shortMap = names => { const sh = names.map(shortName), M = new Map(); names.forEach((n, i) => M.set(n, sh.filter(x => x === sh[i]).length > 1 ? n : sh[i])); return M; };
+// 2行に折る位置: 「・」「＝」の後か「（」の前で、真ん中にいちばん近い所。無ければ真ん中（「ー」や小さい字が行の頭に来ない所）
+const breakAt = s => {
+  const a = [...s]; if (a.length <= 3) return -1;
+  const mid = a.length / 2; let best = -1;
+  a.forEach((c, i) => { const h = /[・＝]/.test(c) ? i + 1 : c === "（" || c === "(" ? i : -1; if (h > 0 && h < a.length && (best < 0 || Math.abs(h - mid) < Math.abs(best - mid))) best = h; });
+  if (best > 0) return best;
+  const small = i => /[ーァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょ]/.test(a[i]);
+  let h = Math.ceil(mid); while (h > 1 && small(h)) h--; if (small(h)) { h = Math.ceil(mid); while (h < a.length - 1 && small(h)) h++; }
+  return h;
+};
+// lineLen は2行に折ったときの長いほうの行の字数（文字の大きさを決めるのに使う）
+const lineLen = s => { const a = [...s], h = breakAt(s); return h < 0 ? a.length : Math.max(h, a.length - h); };
+// 幅が足りないときだけ折れるようにしておく
+const twoLine = s => { const a = [...s], h = breakAt(s); return h < 0 ? esc(s) : esc(a.slice(0, h).join("")) + "<wbr>" + esc(a.slice(h).join("")); };
+const nmWrap = s => esc(s).replace(/([・＝])/g, "$1<wbr>").replace(/（/g, "<wbr>（");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const LT = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const MAXN = 60, WIDE = 6, NAMED = 14;  // 7個以上は名前を略して見出しに出す。15個以上は見出しを記号だけにし、名前は表の上の帯
+const CHOICES = ["はい", "どちらかというとはい", "どちらでもない", "どちらかというといいえ", "いいえ", "わからない"];
+const CH = { "はい": ["y", "はい"], "どちらかというとはい": ["py", "ややはい"], "どちらでもない": ["m", "どちらでも"], "どちらかというといいえ": ["pn", "ややいいえ"], "いいえ": ["n", "いいえ"], "わからない": ["u", "不明"] };
+const EMO = { "はい": "🟩", "どちらかというとはい": "🟢", "どちらでもない": "⬜", "どちらかというといいえ": "🟠", "いいえ": "🟥", "わからない": "⬛" };
+const EXPECTS = ["はい", "いいえ", "割れる", "不明", "正解済み"];
+const CONFS = ["low", "mid", "high"];
+const TIER_LABEL = { quick: "Haiku級", default: "標準モデル", complex: "Opus級" };
+// 対戦は Opus 対 Sonnet で固定。審判は Opus。
+const P = {
+  O: { name: "Opus", model: "claude-opus-5-5", tier: "complex", label: "Opus 5.5", img: "opus",
+    persona: `口調: 落ち着いた大人の男性の、ていねいな独り言。文はすべて「です・ます」でそろえる（「〜いきます」「〜ですね」「〜でしょうか」「〜かもしれません」）。
+上から目線・言い切りで押しつける言い方・くだけすぎた言い方（「〜だろう」「〜じゃないか」「〜しときゃよかった」「よしよしよし」）は使わない。
+文の終わりには必ず「。」か「？」を付ける。
+例: 「定石どおり、時代から聞いていきます。」「Aは、例えば徳川家康か伊達政宗あたりでしょうか。」「一旦Aは〇〇で考えます。」「〇〇だとしたら、Bは〇〇か〇〇ですね。」「ワンチャン聞いてみます。」「Aは見えました。でもまだ言いません。」「ここまでばらけるなら、エピソードでつながっていそうです。」「最初から1500年で聞けばよかったですね。」` },
+  S: { name: "Sonnet", model: "claude-sonnet-5-5", tier: "default", label: "Sonnet 5.5", img: "sonnet",
+    persona: `口調: 普通の若い女性の、自然な話し言葉の独り言。
+例: 「まずは日本の人かどうか聞いてみるね」「あ、そっちか。じゃあ時代を分けたいな」「Aは信長か秀吉あたりかなあ」「よし、Bは見えてきたかも」「うーん、ここは賭けてみよう」。
+わざとらしい語尾（〜だわ・〜なのよ・〜ですわ）、ぶりっこ・幼い言い方、過剰なはしゃぎ方はしない。
+文の終わりには必ず「。」か「？」を付ける。` },
+};
+const REF = { model: "claude-opus-5-5", tier: "complex", label: "Opus 5.5" };
+const MAX_LESSONS = 20;
+// 初期の攻略メモ（基本の攻略法 THINKING に書いていない実戦の知恵。AIの手直しで変わるが、自動では消えない）
+const BASE_MEMO = [
+  "相手の質問の答えも自分の情報。相手が聞いたことは聞き直さず、その答えを前提に次の質問を選ぶ",
+  "審判の答えが自分の知識と食いちがったら審判を正とする。審判は事実を書いてから答えている",
+  "相手の○が多く質問が残り少ないときは、見込みが半分でも解答して○を取りに行く",
+  "国のお題は「今もある国？」→大陸→国旗の色や形→面積・人口・建国年で割る",
+  "食べ物・もののお題は、発祥の国・材料・値段・大きさ・季節で大きく割り、候補の実名を並べてから細かく聞く",
+  "無名に見える枠は、有名な人と並び称される脇役か、同じ出来事・同じ番組・同じ記録の当事者を疑う",
+];
+const PRESETS = [{"theme": "Henry IV", "prompt": "この3人の王だ～れだ？", "targets": ["ヘンリー4世", "アンリ4世", "ハインリヒ4世"]}, {"theme": "おの繋がり", "prompt": "", "targets": ["小野伸二", "エイブラハム・リンカーン", "オノヨーコ", "アポロ・アントン・オーノ", "ジョージ・ワシントン", "千秋実", "小野妹子"]}, {"theme": "この3人だ～れだ？×8", "prompt": "この24人だ～れだ？", "targets": ["ラリー・ペイジ", "西郷隆盛", "ガイウス・ユリウス・カエサル", "織田信長", "ナポレオン・ボナパルト", "勝海舟", "ソクラテス", "空海", "セルゲイ・ブリン", "大久保利通", "グナエウス・ポンペイウス", "豊臣秀吉", "フランツ2世", "山岡鉄舟", "プラトン", "嵯峨天皇", "エリック・シュミット", "木戸孝允", "マルクス・リキニウス・クラッスス", "徳川家康", "アレクサンドル1世", "高橋泥舟", "アリストテレス", "橘逸勢"]}, {"theme": "りんご", "prompt": "", "targets": ["リンゴ・スター", "スティーブ・ジョブズ", "フィオナ・アップル", "椎名林檎", "ウィリアム・テル", "アイザック・ニュートン"]}, {"theme": "ゴジラつながり", "prompt": "", "targets": ["クジラ", "本多猪四郎", "ゴジラ", "松井秀喜", "円谷英二", "ゴリラ"]}, {"theme": "ビートルズ", "prompt": "この４人だ～れだ？", "targets": ["ジョン・レノン", "ポール・マッカートニー", "ジョージ・ハリスン", "リンゴ・スター"]}, {"theme": "ミケランジェロつながり", "prompt": "", "targets": ["ミケランジェロ・ブオナローティ", "ミケランジェロ（ニンジャタートルズ）", "ミケランジェロ・アントニオーニ"]}, {"theme": "初代", "prompt": "", "targets": ["神武天皇", "源頼朝", "足利尊氏", "徳川家康", "伊藤博文"]}, {"theme": "最初に選挙で選ばれた大統領", "prompt": "この３人の大統領だ～れだ？", "targets": ["ジョージ・ワシントン", "サム・ヒューストン", "ジェファーソン・デイヴィス"]}, {"theme": "外国の名前がつくのに日本生まれの料理", "prompt": "この食べ物な～んだ？", "targets": ["ナポリタン", "天津飯", "冷やし中華", "ジンギスカン", "トルコライス"]}, {"theme": "帝国のおわり。", "prompt": "この６人の君主だ～れだ？", "targets": ["フランツ2世", "ニコライ2世", "カール1世", "ヴィルヘルム2世", "メフメト6世", "溥儀"]}, {"theme": "文学賞繋がり", "prompt": "", "targets": ["直木三十五", "アルフレッド・ノーベル", "芥川龍之介"]}, {"theme": "景気つながり", "prompt": "この３人だ～れだ？", "targets": ["神武天皇", "天照大神", "伊弉諾尊"]}, {"theme": "決闘！", "prompt": "", "targets": ["アレクサンダー・ハミルトン", "エヴァリスト・ガロア", "アレクサンドル・プーシキン"]}, {"theme": "畳語の食べ物", "prompt": "この食べ物な～んだ？", "targets": ["フフ", "クク", "ポポー"]}, {"theme": "鉄人", "prompt": "この実在人物だ～れだ？", "targets": ["カル・リプケン・ジュニア", "金本知憲", "石鍋裕", "道場六三郎", "陳建一", "坂井宏行", "中村孝明", "神戸勝彦", "森本正治", "衣笠祥雄", "A・C・グリーン", "フィル・ケッセル", "ルー・テーズ", "王進喜"]}, {"theme": "音速", "prompt": "この３人の実在外国人だ～れだ？", "targets": ["チャック・イェーガー", "アンディ・グリーン", "フェリックス・バウムガートナー"]}, {"theme": "８人もいる！？", "prompt": "この８人だ～れだ？", "targets": ["ウォルター・ホワイト", "アマンダ・クラーク", "ジミー・マッギル", "ディック・ホイットマン", "ハイゼンベルク", "エミリー・ソーン", "ソウル・グッドマン", "ドン・ドレイパー"]}, {"theme": "モナ・リザに関わった人物", "prompt": "", "targets": ["レオナルド・ダ・ヴィンチ", "フランソワ1世", "ナポレオン・ボナパルト", "ヴィンチェンツォ・ペルッジャ"]}, {"theme": "国名の由来になった人物", "prompt": "", "targets": ["アメリゴ・ヴェスプッチ", "クリストファー・コロンブス", "シモン・ボリバル", "フェリペ2世", "イブン・サウード", "ジョン・マーシャル", "マウリッツ", "ジャン・モロー・ド・セシェル"]}];
+const STAND = {};
+document.body.classList.toggle("noimg", !Object.keys(STAND).length);  // 立ち絵のない版は、両者を表の上の段に並べる
+
+// ===================================================================== AI 呼び出し
+let MOCK = true, SAMPLE = null, ENV = "mock";  // ENV: artifact（claude.ai のページ）／server（手元の server.py）／mock
+const applied = { O: "", S: "", ref: "" };
+const aiReady = (async () => {
+  try { if (window.claude && typeof window.claude.use === "function") SAMPLE = await window.claude.use("sample"); } catch (e) {}
+  if (!SAMPLE && window.claude && window.claude.complete) SAMPLE = async p => ({ text: await window.claude.complete(p) });
+  if (SAMPLE) ENV = "artifact";
+  if (!SAMPLE && location.protocol === "http:") {
+    try {
+      if ((await fetch("/api/ping")).ok) SAMPLE = async (prompt, opts = {}) => {
+        const r = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, model: opts.model, modelTier: opts.modelTier }) });
+        const d = await r.json();
+        if (!r.ok || d.error) { const e = new Error(d.error || "AIの呼び出しに失敗"); e.blocked = !!d.blocked; throw e; }
+        return d;
+      };
+    } catch (e) {}
+    if (SAMPLE) ENV = "server";
+  }
+  MOCK = !SAMPLE;
+  if (MOCK) dbg("MOCK");
+})();
+function dbg(s) { const d = $("dbg"); d.textContent = [d.textContent, s].filter(Boolean).join(" "); d.classList.remove("hidden"); }
+
+// ---- 歯止め（2026-11-21 ユーザー指示「絶対に止められるような文章はおくらない」）
+// server.py と同じ決まりを、ページの中でもかける（claude.ai のページにはサーバーがないため）。
+//  1. 止められたことのある書き方（SHAPE_BAN）が入った文は、送らずに断る
+//  2. 止められた文と同じ文は、二度と送らない。理由の分からない失敗をした文は、10分は送らない
+//  3. 24時間に MAX_BLOCKS 回止められたら（理由の分からない失敗は MAX_FAILS 回）、その24時間は何も送らない
+//  4. 同時に送るのは MAX_RUN 個まで、MIN_GAP ミリ秒以上あける
+// 断ったとき・止められたときは blocked のついたエラーを投げる。受け取った側は送り直さない（対局ではパス）。
+const SHAPE_BAN = [
+  String.raw`謎解き`,
+  String.raw`前の手番の(メモ|考え|推理|下書き)`,
+  String.raw`(考えた|推理の|思考の?)(過程|中身|内容)を(すべて|全部|くわしく)?(書|出力|説明)`,
+  String.raw`分かったこと.{0,40}テーマの候補.{0,40}方針`,
+  String.raw`"(think|thinking|nazo|reasoning|thoughts?)"\s*:`,
+].map(s => new RegExp(s, "s"));
+const DAY = 864e5, MAX_BLOCKS = 3, MAX_FAILS = 8, FAIL_HOLD = 6e5, MIN_GAP = 1000, MAX_RUN = 2;
+const STOPPED = /safeguards?|flagged this message|usage polic/i;
+const hashOf = s => {  // 文の指紋（53ビット）
+  let a = 0xdeadbeef, b = 0x41c6ce57;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); a = Math.imul(a ^ c, 2654435761); b = Math.imul(b ^ c, 1597334677); }
+  a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909);
+  b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909);
+  return (4294967296 * (2097151 & b) + (a >>> 0)).toString(36);
+};
+// claude.ai に出す版は、チャットのClaudeが書き写したもの。1字でも変わっていたら左下に出す（空白のちがいは見ない）
+if (SUM && SELF && hashOf(SELF.replace(/const SUM = "[^"]*"/, 'const SUM = ""').replace(/[ \t\r\n]+/g, "")) !== SUM) dbg("写しちがい");
+let guard = null;  // { h: 文の指紋 → 1（二度と送らない）か送ってよくなる時刻, t: 止められた時刻, f: 理由の分からない失敗の時刻, n: 数 }
+async function guardState() {
+  if (!guard) { const g = (!MOCK && await store.get("guard", null)) || {}; guard = { h: g.h || {}, t: g.t || [], f: g.f || [], n: g.n || {} }; }
+  const now = Date.now();
+  guard.t = guard.t.filter(x => now - x < DAY); guard.f = guard.f.filter(x => now - x < DAY);
+  return guard;
+}
+function guardSave(kind) {
+  guard.n[kind] = (guard.n[kind] || 0) + 1;
+  const ks = Object.keys(guard.h);
+  if (ks.length > 300) ks.filter(k => guard.h[k] !== 1).concat(ks.filter(k => guard.h[k] === 1)).slice(0, ks.length - 300).forEach(k => delete guard.h[k]);
+  if (!MOCK) store.set("guard", guard);
+}
+const refuse = (msg, extra) => Object.assign(new Error(msg), { blocked: true }, extra);
+async function guardCheck(prompt) {
+  const g = await guardState(), now = Date.now(), h = hashOf(prompt), v = g.h[h];
+  const why = SHAPE_BAN.some(r => r.test(prompt)) ? "止められたことのある書き方が入っているので、送りません"
+    : v === 1 || v > now ? "AIに届かなかった文と同じ文は、送り直しません"
+    : g.t.length >= MAX_BLOCKS ? `24時間のうちに${MAX_BLOCKS}回止められたので、いまは何も送りません`
+    : g.f.length >= MAX_FAILS ? "AIに届かないことが続いたので、いまは何も送りません" : "";
+  if (why) { guardSave("refused"); throw refuse(why, { refused: true }); }
+  return h;
+}
+let running = 0, lastSend = 0;
+const waiters = [];
+async function sendSlot() {
+  while (running >= MAX_RUN) await new Promise(r => waiters.push(r));
+  running++;
+  const wait = Math.max(0, lastSend + (MOCK ? 0 : MIN_GAP) - Date.now());
+  lastSend = Date.now() + wait;
+  if (wait) await sleep(wait);
+}
+function sendDone() { running--; const w = waiters.shift(); if (w) w(); }
+
+async function ai(prompt, who = "ref") {
+  await aiReady;
+  const h = await guardCheck(prompt);
+  await sendSlot();
+  try {
+    let r;
+    if (MOCK) { await sleep(250); r = { text: mockAI(prompt) }; }
+    else {
+      const c = who === "ref" ? REF : P[who];
+      r = await SAMPLE(prompt, { model: c.model, modelTier: c.tier, cache: false });
+      const stop = r && (r.stopReason || r.stop_reason);
+      if (stop === "refusal" || (r && typeof r.text === "string" && r.text.length < 400 && STOPPED.test(r.text))) throw refuse("AIの安全確認に止められました。同じ文は送り直しません");
+      if (!r || typeof r.text !== "string" || !r.text.trim()) throw new Error("AIから答えが返りませんでした");
+      applied[who] = !r.modelApplied || r.modelApplied === c.model ? c.label : `${TIER_LABEL[r.modelTierApplied] || r.modelApplied}で代行`;
+      drawTop();
+    }
+    guardSave("ok");
+    return r.text;
+  } catch (e) {
+    const msg = String((e && e.message) || e);
+    if ((e && e.blocked) || STOPPED.test(msg)) {  // 止められた: この文は二度と送らない
+      guard.h[h] = 1; guard.t.push(Date.now()); guardSave("blocked");
+      throw e && e.blocked ? e : refuse("AIの安全確認に止められました。同じ文は送り直しません");
+    }
+    if (ENV === "artifact") {  // 理由の分からない失敗: 止められたのかもしれないので、自分からは送り直さない
+      guard.h[h] = Date.now() + FAIL_HOLD; guard.f.push(Date.now()); guardSave("failed");
+      throw refuse("AIに届きませんでした（" + msg.slice(0, 60) + "）");
+    }
+    guardSave("error");
+    throw e;
+  } finally { sendDone(); }
+}
+function parseJSON(raw) {
+  const s = String(raw).replace(/```(?:json)?/g, "");
+  const a = s.indexOf("{"), b = s.lastIndexOf("}");
+  if (a < 0 || b <= a) return null;
+  try { return JSON.parse(s.slice(a, b + 1)); } catch (e) {}
+  for (let i = a; i >= 0 && i < s.length; i = s.indexOf("{", i + 1)) {  // 前後に余計な文があるとき、釣り合う {…} を前から試す
+    let dep = 0, q = false, esc = false;
+    for (let j = i; j < s.length; j++) {
+      const c = s[j];
+      if (q) { if (esc) esc = false; else if (c === "\\") esc = true; else if (c === '"') q = false; continue; }
+      if (c === '"') q = true; else if (c === "{") dep++; else if (c === "}" && --dep === 0) { try { const d = JSON.parse(s.slice(i, j + 1)); if (d && d.action) return d; } catch (e) {} break; }
+    }
+  }
+  return null;
+}
+async function askJSON(prompt, check, who = "ref", tries = 3) {
+  let note = "", last = "";
+  for (let i = 0; i < tries; i++) {
+    if (G && G.stop) throw new Error("中断");
+    let raw;
+    try { raw = await ai(prompt + note, who); } catch (e) {
+      last = String(e.message || e); console.warn("AIエラー:", who, last.slice(0, 200));
+      if (e.blocked || /safeguards/.test(last)) { e.blocked = true; throw e; }  // 止められた文は送り直さない
+      await sleep(1500); continue;
+    }
+    const d = parseJSON(raw);
+    const err = d ? check(d) : "JSONとして読めない";
+    if (err) console.warn("AIの出力が不正:", who, err, String(raw).slice(0, 400));
+    if (!err) return d;
+    last = err;
+    note = `\n\n※前回の出力は不正でした（${err}）。指示どおりのJSONだけを出力してください。`;
+  }
+  throw new Error(last);
+}
+
+// ===================================================================== 保存
+const mem = {};
+const store = {
+  async get(k, def) {
+    try { if (window.storage) { const r = await window.storage.get(k); return r && r.value != null ? JSON.parse(r.value) : def; } } catch (e) { return def; }
+    try { const v = localStorage.getItem("ateru:" + k); return v == null ? def : JSON.parse(v); } catch (e) { return k in mem ? mem[k] : def; }
+  },
+  async set(k, v) {
+    const s = JSON.stringify(v);
+    try { if (window.storage) { await window.storage.set(k, s); return; } } catch (e) {}
+    try { localStorage.setItem("ateru:" + k, s); } catch (e) { mem[k] = v; }
+  },
+};
+let history = [], lessons = { O: [], S: [] }, advices = [], hideNames = false;
+
+// ===================================================================== プロンプト
+const GAME = "推理ゲーム「複数人アテルーヨー」（出題者が選んだ複数のターゲットを、はい・いいえで答えられる質問で同時に当てるゲーム）";
+const qline = g => `問題文: 「${g.prompt}」`;
+const L = i => i < 26 ? LT[i] : LT[Math.floor(i / 26) - 1] + LT[i % 26];  // 27個目からは AA・AB…
+const LI = s => { s = String(s).trim().toUpperCase(); for (let i = 0; i < MAXN; i++) if (L(i) === s) return i; return -1; };
+const other = p => p === "O" ? "S" : "O";
+
+const receptionPrompt = inputs => `【受付】あなたは${GAME}の審判です。出題者（人間）が選んだターゲットを確かめてください。
+${inputs.map((s, i) => `ターゲット${L(i)}: 「${s}」`).join("\n")}
+
+各ターゲットについて、入力が何を指すかを特定する。
+- 呼び名から、一般にいちばん有名なものを指すと考えてよい（「家康」→徳川家康、「ナポレオン」→ナポレオン・ボナパルト）。かっこの補足があれば、それで決める。
+- 同じ呼び名で同じくらい有名なものが複数あって決められないとき、または何を指すか分からないときだけ ok を false にし、issue に理由と候補を書く（40字以内）。
+- name: 日本語でのいちばん一般的な正式表記（人物はフルネーム）。
+- aliases: 正解にしてよい別の呼び方（本名・旧名・通称・略称・英語表記・ひらがな読みなど。最大8個）。
+- desc: 何者か・何かを30字以内（人物は生没年と代表的な肩書き）。
+question: 解答者に見せる問題文。ターゲットの種類と数だけを表し、テーマのネタバレは書かない。
+  全員が亡くなった実在の偉人なら「この${inputs.length}人の偉人、だ～れだ？」、存命の人・架空の人物がまざるなら「この${inputs.length}人、だ～れだ？」、国なら「この${inputs.length}つの国、ど～こだ？」、それ以外は「この${inputs.length}つ、な～んだ？」。
+出力（JSONのみ）: {"question":"","targets":[{"ok":true,"name":"","aliases":[],"desc":"","issue":""}, ...${inputs.length}個]}`;
+
+const dossier = g => g.T.map((t, i) => `ターゲット${L(i)}: ${t.name}${t.desc ? `（${t.desc}）` : ""}`).join("\n");
+const effAns = e => e.answers.map((a, i) => e.over && e.over[i] ? e.over[i] : a);
+
+function oraclePrompt(g, q) {
+  const past = g.ev.filter(e => e.kind === "q").map(e => `- 「${e.text}」→ ${effAns(e).map((a, i) => `${L(i)}:${a}${e.over && e.over[i] ? "（出題者が訂正）" : ""}`).join(" ")}`).join("\n") || "（なし）";
+  return `【回答係】あなたは${GAME}の審判です。出題者に代わって、解答者の質問に公平・正確に答えてください。
+${qline(g)}
+${dossier(g)}
+
+解答者の質問: 「${q}」
+
+手順1: 質問がルールに合うか判定する。次のどれかに当たれば無効。
+- 複合質問（「AまたはBですか？」「A、B、あるいはCですか？」のように別々の条件を並べたもの）や、2つの文・条件をつないだ質問（「〜のうち、〜ですか？」「〜ではなく、〜ですか？」）。「芸術家ですか？」のような1つの上位概念、「1〜6月生まれですか？」「身長170cm以上ですか？」のような1つの範囲は有効。
+- はい／いいえで答えられない質問（「何歳ですか？」「どこの国ですか？」）。
+- 特定のターゲットだけに向けた質問（「Aは〜ですか？」）、ターゲットどうしの関係を聞く質問（「全員同じ国ですか？」「Bより年上ですか？」）。
+- 過去の質問と実質同じ意味の言い換え（全ターゲットで答えが必ず同じになるもの）。区切りの年や範囲が違うものは別の質問として有効。
+- 名前を直接当てに来る質問（「徳川家康ですか？」）や、出身地・出身校・ある1年に生きていたか・細かい年の区切り・誕生日・身長・名前の字や文字数のような細かい事実の質問は有効。ふつうに答える。上に挙げた4つ以外の理由で無効にしない。
+手順2: 有効なら、答える前に、各ターゲットについて判断に必要な具体的な事実を facts に1つずつ書く（各60字以内）。例: 「1800年以降に生きていましたか？」→「徳川家康: 1543〜1616年」。記録がない・説が分かれるならそう書く。
+手順3: facts だけを根拠に、各ターゲットについて6択から1つ選ぶ。
+${CHOICES.join(" / ")}
+- 明確に当てはまれば「はい」、明確に外れれば「いいえ」。
+- 「どちらかというと〜」は分類の境目だけに使う（本業ではないが手がけた・実権はなかったが地位にはあった など）。年・数・賞・記録のように事実で決まる質問には使わない。
+- 「わからない」は、記録がなく判断できないときだけ。説が分かれるだけなら通説で答える。架空の人物・人以外のものは、作中の設定やそのものの事実で答える。ただし、そのままでは当てはまらない質問（人でないもの・人に近い架空の生き物（宇宙人・亀・ロボット・妖怪など）への「アメリカの人ですか？」「日本人ですか？」「女性ですか？」など）は、「はい」「いいえ」と言い切らず、近さに応じて「どちらかというとはい」「どちらでもない」「どちらかというといいえ」を選ぶ（作中の設定がはっきりしなければ「わからない」）。日本語を話す・日本の作品の主人公は、広い意味では日本人に近い。例: 孫悟空に「日本人ですか？」→「どちらかというとはい」（宇宙人だが地球育ちで日本語を話す）、ピッコロ大魔王→「どちらかというといいえ」、ニンジャタートルズのミケランジェロに「アメリカの人ですか？」→「どちらでもない」。はっきり決まること（「亀ですか？」「架空の人物ですか？」）は、ふつうに「はい」「いいえ」で答える。
+- 過去の回答（出題者の訂正をふくむ）と矛盾しないこと。
+過去の回答:
+${past}
+
+出力（JSONのみ）:
+有効: {"valid": true, "facts": [${g.n}個], "answers": [${g.n}個の6択の語]}
+無効: {"valid": false, "reason": "15字以内の理由"}`;
+}
+const checkOracle = g => d => {
+  if (d.valid === false) return "";
+  if (!(Array.isArray(d.facts) && d.facts.length === g.n)) return `facts は文字列${g.n}個`;
+  return d.valid === true && Array.isArray(d.answers) && d.answers.length === g.n && d.answers.every(x => CHOICES.includes(x)) ? "" : `answers は6択の文字列${g.n}個`;
+};
+
+// items: 判定してほしい名前だけ [[書いた枠, 名前], ...]（ほかの枠はページの側で決まっている）
+const judgePrompt = (g, items) => `【判定係】${GAME}の解答を判定してください。
+${qline(g)}
+正解:
+${g.T.map((t, i) => `${L(i)}: ${t.name}（別名: ${(t.aliases || []).join("、") || "なし"}）`).join("\n")}
+判定してほしい名前（記号は書かれた枠）:
+${items.map(([i, n]) => `${L(i)}: 「${n}」`).join("\n")}
+上の名前のそれぞれについて、正解のどれと同じもの（同一人物・同じ国・同じもの）かを、正解の記号で答える。どれとも違えば "-"。
+別名・本名・幼名・諡号・通称・略称・表記ゆれ・外国語表記・姓だけ／名だけでも一意に決まるなら同じもの。同名の別人・親子・兄弟は違うもの。
+出力（JSONのみ）: {"match": [上の順に${items.length}個。"A"〜"${L(g.n - 1)}" か "-"]}`;
+
+const RULES = (g, p) => `■ルール
+- 出題者（人間）は、あるテーマでつながる${g.n}個のターゲットを選び、A〜${L(g.n - 1)}と記号を振った。テーマは非公開。
+- あなた（${P[p].name}）と相手（${P[other(p)].name}）が交互に手番を行う。手番では「質問」か「解答」のどちらかをする。相手の質問・回答・解答とその結果もすべて見えるので、どんどん利用してよい。
+- 【質問】全ターゲットに同じ質問をし、審判（AI）がターゲットごとに6択で答える（はい／どちらかというとはい／どちらでもない／どちらかというといいえ／いいえ／わからない）。補足は返らない。質問は1人${g.max}回まで。
+  質問は「〜ですか？」の1文で短く（30字まで）。前置き・言いかえ・「〜のうち」「〜ではなく」「〜など」「〜したことがある」のような飾りは付けない（「俳優ですか？」）。飾りのある質問は審判に届く前に差し戻される。
+  無効になる質問: 複合質問（「AまたはB」）、2つの文や条件をつないだ質問、はい／いいえで答えられない質問、特定のターゲットだけに向けた質問、ターゲットどうしの関係を聞く質問、既出の質問の言い換え。
+- 【解答】A〜${L(g.n - 1)}の名前を全部書く。枠ごとに「○」か「×」が返る。×の名前がお題の別の枠の正解なら「×（別の枠の正解）」と返る。○は自分の解答で取った分が残る。
+  解答は質問の回数に数えない。ただし自分の解答を続けるには、間に自分の質問を1回はさむ（直前の自分の解答で新しい○か「別の枠の正解」が出たときは、続けてもう1回だけ解答してよい）。
+  質問を使い切ったら、最後に1回だけ解答できる。
+- 自分の解答で全部の枠に○を取った人の勝ち。相手が○を取った名前を、次の自分の解答に書いてもよい。両者が質問を使い切ると出題者の勝ち。`;
+
+const THINKING = `■勝ち方
+- 1つずつ当てるゲームではない。テーマを見抜いて、まとめて当てるゲーム。全員の国・時代・職業を順に調べると質問が足りなくなる。
+- 答えの並びと○の名前に合うテーマの見当を、いつも2〜3個持つ。知識と推論は全力で使い、大胆な見立てと核心を突く質問をしてよい。下はやり込んだ人の知見で、決まりではない。
+■進め方
+1. 最初の2〜3問は、全員の答えの並びを見る大きな質問（日本の人か・地域・時代）。日本の人でない枠は、早めに地域も聞く（日本でない＝欧米と決めつけない）。
+2. いちばん名前が浮かぶ1枠（主役）の候補を実名で思い浮かべ、候補どうしを割る質問をする。1〜2人に絞れたら解答して○を取る（解答は質問を使わない。×でも1人消える）。
+3. ○が出たら（相手の○でもよい）、その人が有名な理由を5つ挙げる（肩書き・偉業・代表作・あだ名・逸話・事件・最期・名前の字や音・関係者・場所）。残りの枠の条件に合う人がいる線がテーマ。2人目の○でテーマはほぼ決まる。確定できる枠は解答で取り、迷う枠の候補をまとめて割る質問をする。
+■答えの並びからお題の型を読む
+- ばらばら → 違うジャンルの人が、1つのエピソード・属性・名前でつながる（宮本武蔵と大谷翔平＝二刀流）。共通点が見えないまま3〜4問たったら、名前のつながり（同じ音・同じ字・同じ名前の別人）を疑い、名前の質問で確かめる。架空の人物・人以外のものもまざる。
+- 全員そろう → 名前のついた組（三英傑・ビートルズ…）か「歴代」の一覧。人数と条件から組を言い当てる。決めきれなければ上位のくくりで半分に割る（「文化・学問の分野で主に知られていますか？」）。
+- 一部の枠だけ同じ → そのかたまりは1つの組。職業名を1つずつ当てず、大きなくくり（「テレビによく出る人ですか？」「ものを作る仕事の人ですか？」）で割り、見当が2〜3個になったら職業をずばり聞く。1人分かれば残りは並び称される人。
+- 交互・何個おき → 小さな組のくり返し。A〜の並びは、生まれた順・就任の順・ふつうに言う順のことが多い。
+- よく出るテーマ: 関係（ライバル・師弟・親子・主従・作者と作品の登場人物・同一人物説）、同じ肩書き（初代・開祖・三大〇〇）、同じ代名詞・記録、同じ出来事（決闘・暗殺・亡命）、名前（同じ字・音・姓・全員同じ名前）、逸話、場所・事件の接点。
+■質問の選び方
+- 1問でなるべく多くの枠の答えが割れる質問を選ぶ。1枠にしか当たらない細かい質問（「〇〇という球団の遊撃手ですか？」）より、ほかの枠の候補も割れるくくり（「主にアメリカで活動しましたか？」「世界大戦に関わりがありますか？」）。
+- ただし○のない枠が1〜2個になったら、その枠の候補どうしを確実に分ける質問（代表作・在任期間・出来事）でよい。
+- 聞く前に枠ごとの答えを予想し、全部同じになる質問・すでに分かる質問は聞かない。はいの見込みが2〜3割もない1点賭けを続けない。
+- 職業は1つずつ順に聞かない。聞くときは「主に何で知られるか」をずばり、性別をまぜずに（「俳優ですか？」。女優は仕事と性別の2つ）。人物像が見えたら、出来事・最期・代表作・場所・記録の質問で一気に絞る。
+- 時代は分かっている範囲を半分に割る年で聞く。細かく刻むのは候補の実名が見えてから。
+- 事典に載る、記録のはっきりした事実で聞く（出身地・生まれた年・享年・在任期間・名前の字や読み・記録）。身長・体重・血液型のような、昔の人には記録がない事実は聞かない（誕生日・生まれた月はよいが、昔の人は「わからない」が多くなる）。
+- 実在・存命・性別・国籍は予想が割れるときだけ。偉人はほとんど男性（大統領・首相・天皇・皇帝・軍人はほぼ全員）なので、性別は最初のうちは聞かない。
+- 「どちらかというと」は境目のサイン（本業ではない・実権がなかった・架空）。
+- 国・食べ物・ものも同じ。大きな分類 → 候補の実名 → 候補を半分に割る事実。
+■解答
+- ○が取れそうな枠があれば早めに解答して情報を取る。相手の○の名前はそのまま書いてよい。
+- 根拠のない枠を当てずっぽうで埋めない。7人以上のお題は、テーマの見当がつき、○のない枠の半分以上に根拠のある名前を書けるまで質問で絞る。
+- ×は「その枠ではない」だけで、別の枠の正解かもしれない。×が2枠だけ・同じ集団のお題なら、並び順の入れ替えを考える。
+- 2人のお題は定番のペア（ライバル・師弟・主従・コンビ）を思い浮かべ、1つに決まったら確かめずに解答する。`;
+
+// 解答者に渡す記録の答えの記号（短くするため。枠の記号 A・B… は残す）
+const ASYM = { "はい": "○", "どちらかというとはい": "△", "どちらでもない": "－", "どちらかというといいえ": "▽", "いいえ": "×", "わからない": "？" };
+const ASYM_NOTE = "答えの記号: ○はい △どちらかというとはい －どちらでもない ▽どちらかというといいえ ×いいえ ？わからない。解答の ○正解 ×外れ ×別＝外れだがお題の別の枠の正解";
+const histText = (g, facts = false, short = false) => {
+  const R = [];
+  g.ev.forEach(e => {
+    const who = P[e.p].name;
+    if (e.kind === "q") {
+      R.push(short ? `${who}の質問${e.no} 「${e.text}」→ ${effAns(e).map((a, i) => L(i) + (ASYM[a] || a)).join(" ")}`
+        : `${who}の質問${e.no} 「${e.text}」→ ${effAns(e).map((a, i) => `${L(i)}:${a}`).join(" ")}`);
+      if (facts && e.facts) e.facts.forEach((f, i) => f && R.push(`   根拠 ${L(i)}: ${f}`));
+    }
+    else if (e.kind === "inv") R.push(e.pass ? `${who}はパス` : `${who}の質問（無効）「${e.text}」理由: ${e.reason}`);
+    else if (e.kind === "a") R.push(`${who}の解答 → ${e.names.map((n, i) => `${L(i)}:${n}${e.marks[i] === "o" ? "○" : e.marks[i] === "w" ? (short ? "×別" : "×（別の枠の正解）") : "×"}`).join(" ")}`);
+  });
+  return R.join("\n") || "（まだなし）";
+};
+const evOf = (g, p) => g.ev.filter(e => e.p === p);
+const solvedSet = (g, p) => { const s = new Set(); g.ev.forEach(e => e.kind === "a" && (!p || e.p === p) && e.marks.forEach((m, i) => m === "o" && s.add(i))); return s; };
+const solvedName = (g, i) => { for (const e of g.ev) if (e.kind === "a" && e.marks[i] === "o") return e.names[i]; return ""; };
+const qCount = (g, p) => g.ev.filter(e => e.kind === "q" && (!p || e.p === p)).length;
+
+const pol = a => /いいえ/.test(a) ? "N" : /はい/.test(a) ? "Y" : "U";
+function groupMode(g) {
+  const k = solvedSet(g), qs = g.ev.filter(e => e.kind === "q");
+  if (g.n - k.size < 2 || qs.length < 3) return false;
+  return qs.every(e => new Set(effAns(e).filter((a, i) => !k.has(i)).map(a => a.replace("どちらかというと", ""))).size <= 1);
+}
+// 正解の出ていない枠のうち、ここまでの答えがずっと同じ枠のかたまり（3枠以上。全部が1つのかたまりのときは groupMode が受け持つ）
+function clusters(g) {
+  const k = solvedSet(g), qs = g.ev.filter(e => e.kind === "q" && e.facts && e.facts.length);
+  if (qs.length < 3) return [];
+  const M = new Map();
+  g.T.forEach((_, i) => { if (k.has(i)) return; const key = qs.map(e => effAns(e)[i].replace("どちらかというと", "")).join("|"); M.set(key, [...(M.get(key) || []), i]); });
+  return [...M.values()].filter(a => a.length >= 3 && a.length < g.n - k.size).sort((x, y) => y.length - x.length).slice(0, 2);
+}
+// 「別の枠の正解」と出た名前の置き場所を、公開された採点だけから消去法で求める（8・9）
+function placeHint(g) {
+  const k = solvedSet(g), open = g.T.map((_, i) => i).filter(i => !k.has(i));
+  if (!open.length) return "";
+  const C = new Map();  // 名前 → まだ置ける枠
+  g.ev.forEach(e => e.kind === "a" && e.marks.forEach((m, i) => {
+    if (m !== "w" || (e.to && k.has(e.to[i]))) return;  // すでに○の出た枠の人（呼び方ちがい）は数えない
+    const key = norm(e.names[i]); if (key && !C.has(key)) C.set(key, { name: e.names[i], cand: new Set(open) });
+  }));
+  if (!C.size) return "";
+  g.ev.forEach(e => e.kind === "a" && e.names.forEach((n, i) => { const c = C.get(norm(n)); if (c && e.marks[i] !== "o") c.cand.delete(i); }));  // 書いて外れた枠は外す
+  const fixed = new Map();
+  for (let changed = true; changed;) {  // 置き場所が1つに決まった名前の枠は、ほかの名前の候補から外す（くり返す）
+    changed = false;
+    for (const [key, c] of C) if (c.cand.size === 1 && !fixed.has(key)) {
+      const j = [...c.cand][0]; fixed.set(key, j); changed = true;
+      for (const [k2, c2] of C) if (k2 !== key) c2.cand.delete(j);
+    }
+  }
+  const items = [...C.values()].filter(c => c.cand.size >= 1 && c.cand.size <= 3).map(c => `「${c.name}」→${[...c.cand].map(L).join("か")}`);
+  if (!items.length) return "";
+  const all = open.every(i => [...fixed.values()].includes(i)) && new Set(fixed.values()).size === fixed.size;
+  return `※「別の枠の正解」と出た名前の置き場所（○の枠と、書いて外れた枠を除いた消去法）: ${items.join("、")}。${all ? "これで○のない枠が全部埋まる。" : ""}`;
+}
+function stageHint(g, p) {
+  const k = solvedSet(g), mine = solvedSet(g, p), H = [];
+  const qs = g.ev.filter(e => e.kind === "q");
+  clusters(g).forEach(a => H.push(`※${a.map(L).join("・")} の${a.length}枠は、ここまでの答えがずっと同じ。1つの組らしい。何者の集まりかを、大きなくくりで半分に割る質問で突き止める（職業名を1つずつ当てにいかない）。見当が2〜3個に絞れたら、ずばり聞くか解答で確かめる。`));
+  if (groupMode(g)) H.push(`※ここまで${qs.length}問、正解の出ていない枠がいつも同じ答え。同じジャンルの名前のついた組のお題らしい。分かった条件と人数に合う有名な組を頭の中で並べ、その組なら答えが決まる質問で確かめる。`);
+  else if (qs.length >= 2 && qs.slice(0, 3).filter(e => new Set(effAns(e).filter((a, i) => !k.has(i))).size > 1).length >= 2 && !k.size)
+    H.push("※最初の質問から答えがばらけている。違うジャンルの人を同じエピソード・属性でつなぐお題らしい。まず主役の1人を確定させる。");
+  if (k.size) H.push(`※正解が分かっている枠: ${[...k].map(i => `${L(i)}=${solvedName(g, i)}${mine.has(i) ? "（あなたが○済み）" : "（相手が○。あなたはまだ）"}`).join("、")}。その人の代名詞・肩書き・逸話・事件・名前から、残りの枠の条件に合う線をテーマにして、残りを狩る。`);
+  const place = placeHint(g);
+  if (place) H.push(place);
+  const last = [...evOf(g, p)].reverse().find(e => e.kind === "a");
+  if (!place && last && last.marks.filter(m => m !== "o").length === 2) H.push("※あなたの直前の解答で×が2枠。入れ替えも考える。");
+  // 日本の人ではないと分かった、正解の出ていない枠があるのに、地域をまだ聞いていない
+  const isJp = e => /日本の?(人|出身|生まれ)/.test(e.text), isArea = e => !isJp(e) && /アジア|ヨーロッパ|欧州|西洋|東洋|アメリカ|北米|南米|中南米|アフリカ|中東|オセアニア|中国|韓国|朝鮮|インド|ロシア|イギリス|フランス|ドイツ|イタリア|スペイン|国の人|地域の人|出身/.test(e.text);
+  const jq = qs.find(isJp);
+  if (jq && !qs.some(isArea)) {
+    const fo = effAns(jq).map((a, i) => /^いいえ|どちらかというといいえ/.test(a) && !k.has(i) ? i : -1).filter(i => i >= 0);
+    if (fo.length) H.push(`※${fo.map(L).join("・")} は日本の人ではないと分かっているが、どの地域の人かをまだ聞いていない。「日本でない＝欧米」と決めつけず、アジア・ヨーロッパ・アメリカ大陸などで分ける。`);
+  }
+  // 正解の出ていない枠が全員同じ答えになった質問（何も分からなかった質問）の数
+  const flat = qs.filter(e => { const open = effAns(e).filter((a, i) => !k.has(i)); return open.length > 1 && new Set(open).size === 1; });
+  if (qs.length >= 6 && flat.length * 3 >= qs.length && !groupMode(g)) H.push(`※ここまでの${qs.length}問のうち${flat.length}問は、正解の出ていない枠が全員同じ答えで、何も分からなかった。職業や属性を1つずつ当てにいく聞き方になっている。まだ分からない枠を2つに割る大きなくくり（地域・時代・生きているか・何で知られるか）で聞く。`);
+  // 直前の質問で、まだ分からない枠がどう分かれたか（表から数えるだけ）
+  const lq = qs[qs.length - 1], open = g.T.map((_, i) => i).filter(i => !k.has(i));
+  if (lq && open.length > 1) {
+    const c = { Y: 0, N: 0, U: 0 }; open.forEach(i => c[pol(effAns(lq)[i])]++);
+    H.push(`※直前の質問「${lq.text}」は、まだ分からない${open.length}枠を はい${c.Y}・いいえ${c.N}・どちらとも${c.U} に分けた。`);
+  }
+  // 「わからない」「どちらでもない」がまだ分からない枠の半分以上に出た質問（新しい3問から。表から数えるだけ）
+  if (open.length > 1) {
+    const many = a => qs.slice(-3).reverse().find(e => open.filter(i => effAns(e)[i] === a).length * 2 >= open.length);
+    const u = many("わからない"), m = many("どちらでもない");
+    if (u) H.push(`※「${u.text}」は、まだ分からない${open.length}枠のうち${open.filter(i => effAns(u)[i] === "わからない").length}枠が「わからない」（記録の残っていない種類の事実）。同じ種類の事実を細かく聞き直さず、作品・活動した場所・肩書き・出来事のような別の種類で聞く。`);
+    if (m) H.push(`※「${m.text}」は、まだ分からない${open.length}枠のうち${open.filter(i => effAns(m)[i] === "どちらでもない").length}枠が「どちらでもない」。人として聞く前提が合わない枠（人でないもの・架空の存在）があるのかもしれない。`);
+  }
+  if (open.length === 1 && !g.final[p]) H.push(`※○のない枠は ${L(open[0])} だけ。ほかの枠を割る必要はない。この枠の候補どうしを確実に分ける質問（代表作・在任期間・出来事）か、解答を選ぶ。`);
+  // ここまでの答えが全部同じ2枠（3枠以上のかたまりは上で出している）
+  if (qs.length >= 3 && open.length > 2) {
+    const M = new Map();
+    open.forEach(i => { const key = qs.map(e => pol(effAns(e)[i])).join(""); M.set(key, [...(M.get(key) || []), i]); });
+    const pairs = [...M.values()].filter(a => a.length === 2).slice(0, 4);
+    if (pairs.length) H.push(`※ここまでの答えが全部同じ2枠: ${pairs.map(a => a.map(L).join("・")).join("、")}。同じ仲間の組かもしれない。`);
+  }
+  // 答えの並びの規則（○×だけで見て、何枠ごとにくり返すか・前と後ろで分かれるか）
+  if (g.n >= 4) {
+    const seen = new Set();
+    [...qs].reverse().forEach(e => {
+      if (seen.size >= 2) return;
+      const v = effAns(e).map(pol);
+      if (v.includes("U") || new Set(v).size < 2) return;
+      let msg = "";
+      const runs = v.filter((x, i) => i === 0 || x !== v[i - 1]).length;
+      if (runs === 2 && v.indexOf(v[v.length - 1]) >= 2 && v.lastIndexOf(v[0]) <= v.length - 3) {
+        const cut = v.indexOf(v[v.length - 1]);
+        msg = `${L(0)}〜${L(cut - 1)} と ${L(cut)}〜${L(v.length - 1)} で答えが分かれた（前と後ろで別の組らしい）`;
+      } else {
+        for (let d = 2; d <= Math.floor(g.n / (g.n >= 6 ? 3 : 2)) && !msg; d++)
+          if (v.every((x, i) => i + d >= v.length || x === v[i + d])) msg = `${d}枠ごとに同じ答えがくり返した（はい: ${v.map((x, i) => x === "Y" ? L(i) : "").filter(Boolean).join("・")}）`;
+      }
+      if (msg && !seen.has(msg)) { seen.add(msg); H.push(`※「${e.text}」の答えは、${msg}。お題の並び方の手がかり。`); }
+    });
+  }
+  // 答えがばらばらなのに、名前の質問がまだない（名前でつながるお題の見落とし）
+  if (qs.length >= 6 && open.length > 2 && !groupMode(g) && !qs.some(e => /名前|名字|苗字|文字|字が|の字|音が|の音|読み|呼び名/.test(e.text))) {
+    const sig = new Set(open.map(i => qs.map(e => pol(effAns(e)[i])).join("")));
+    if (sig.size * 5 >= open.length * 3) H.push(`※ここまで${qs.length}問、まだ分からない${open.length}枠は答えがばらばらで、名前（音・字）についての質問はまだない。国・時代・職業でそろわないお題は、名前でつながっていることがある。候補の名前を並べて、同じ音・字がないか見る。`);
+  }
+  if (g.n >= 7 && g.n - k.size > g.n / 2) H.push(`※まだ正解の分かっていない枠が${g.n - k.size}個ある。テーマの見当がつき、その半分以上に根拠のある名前を書けるまでは、解答より質問で絞る。`);
+  return H.join("\n");
+}
+const normLesson = x => typeof x === "string" ? { t: x, n: 0, age: 0 } : { t: String(x.t || ""), n: x.n | 0, age: x.age | 0, ...(x.base ? { base: true } : {}) };
+const lessonsText = (p, idx = false) => lessons[p].length ? lessons[p].map((x, i) => `- ${idx ? `[${i}] ` : ""}${x.t}${x.n ? `（役立った局: ${x.n}）` : ""}`).join("\n") : "（まだなし）";
+const MEMO_CHANGES = 2, MEMO_TRIAL = 6;
+function applyMemo(p, m) {
+  const L0 = lessons[p], used = new Set((m.used || []).filter(i => Number.isInteger(i)));
+  let next = L0.map((x, i) => ({ ...x, n: x.n + (used.has(i) ? 1 : 0), age: x.age + 1 }));
+  let budget = MEMO_CHANGES;
+  const drop = new Set();
+  (m.fix || []).forEach(f => { if (budget > 0 && f && Number.isInteger(f.i) && next[f.i] && typeof f.t === "string" && f.t.trim()) { next[f.i] = { ...next[f.i], t: f.t.trim().slice(0, 80) }; budget--; } });
+  (m.drop || []).forEach(i => { if (budget > 0 && Number.isInteger(i) && next[i] && !drop.has(i)) { drop.add(i); budget--; } });
+  next = next.filter((x, i) => !drop.has(i) && !(!x.base && x.n === 0 && x.age >= MEMO_TRIAL));
+  (m.add || []).forEach(t => { if (budget > 0 && typeof t === "string" && t.trim()) { next.push({ t: t.trim().slice(0, 80), n: 0, age: 0 }); budget--; } });
+  if (next.length > MAX_LESSONS) next = next.sort((a, b) => (b.base ? 1 : 0) - (a.base ? 1 : 0) || b.n - a.n || a.age - b.age).slice(0, MAX_LESSONS);
+  lessons[p] = next;
+}
+const adviceList = g => [...advices.map(a => a.text), ...(g ? g.advice : [])];
+
+// 終盤（○のない枠が2つ以下で、○の枠のほうが多い）は、序盤の読み方（最初の質問・主役・答えの並びの型）を外す
+const EARLY = /^(1\. 最初の|2\. いちばん名前|- ばらばら|- 全員そろう|- 一部の枠だけ|- 交互)/;
+function thinkingFor(g) {
+  const k = solvedSet(g), open = g.n - k.size;
+  return open <= 2 && k.size >= open ? THINKING.split("\n").filter(l => !EARLY.test(l)).join("\n") : THINKING;
+}
+function guesserPrompt(g, p, note = "") {
+  const left = g.max - qCount(g, p);
+  const mine = solvedSet(g, p);
+  const ex = Array.from({ length: g.n }, (_, i) => mine.has(i) ? "正解済み" : "…");
+  const adv = adviceList(g);
+  return `【解答者】あなたは${GAME}のプレイヤー「${P[p].name}」です。相手は「${P[other(p)].name}」。出題者（人間）のお題を、相手より先に全部当ててください。
+${P[p].persona}
+${qline(g)}
+${RULES(g, p)}
+
+${thinkingFor(g)}
+
+■攻略メモ（これまでの対局で分かったこと）
+${lessonsText(p)}
+${adv.length ? `■観戦している出題者（人間）からのアドバイス（両者に届いている。参考にするかはあなたが決める）\n${adv.map(x => "- " + x).join("\n")}\n` : ""}
+■ここまでの記録（古い順。両者の分。${ASYM_NOTE}）
+${histText(g, false, true)}
+あなたの残りの質問: ${left}回${g.final[p] ? "（質問は使い切った。最後の解答だけができる）" : ""}　相手の残り: ${g.max - qCount(g, other(p))}回
+${stageHint(g, p)}${note ? "\n" + note : ""}
+
+■出力（JSONのみ。考えた過程は書かない）
+質問するとき: {"action":"question","question":"〜ですか？","expect":[${g.n}個],"conf":"mid","say":"ひとこと"}
+  expect は枠ごとの答えの予想（${EXPECTS.join("／")}）。あなたが○済みの枠は「正解済み」。例: ${JSON.stringify(ex)}
+解答するとき: {"action":"answer","names":[A〜${L(g.n - 1)}の名前${g.n}個],"theme":"つながりの見当（20字以内。分からなければ空）","conf":"high","say":"ひとこと"}
+conf は、いまどれくらい答えが見えているか（low: さっぱり／mid: 半分くらい／high: ほぼ見えた）。
+say は、質問や解答を口にする前に声に出すひとりごと（40〜80字。上の口調で）。直前の結果への反応（驚き・納得・困惑）、答えの並びで気づいたこと、いま思い浮かんでいる名前やテーマの見当、この質問で何を分けたいかを、見ている人が楽しめるように言う。ある枠に初めて確信したら「Aは見えました。でも教えません」のように、名前を言わずにつぶやいてよい。相手・出題者・審判をけなしたり煽ったりしない。`;
+}
+const checkGuess = (g, p) => d => {
+  if (d.action === "question") {
+    if (g.final[p]) return "質問は使い切った。action は answer にする";
+    if (!d.question || typeof d.question !== "string") return "question が無い";
+    if (!(Array.isArray(d.expect) && d.expect.length === g.n)) return `expect は${g.n}個`;
+    return "";
+  }
+  if (d.action === "answer") return Array.isArray(d.names) && d.names.length === g.n && d.names.every(x => typeof x === "string" && x.trim()) ? "" : `names は名前${g.n}個`;
+  return "action は question か answer";
+};
+// 質問の飾り（2文・前置き・言いかえ）は、審判に聞く前に差し戻す（手番は使わない）
+const qStyle = q => {
+  const t = String(q).trim().replace(/[？?]+$/, "");
+  if (t.length > 30) return "質問が長い。「〜ですか？」の1文で30字までにする";
+  if (/[、，,。]/.test(t)) return "2つの文や条件をつないでいる。「〜ですか？」の1文で1つのことだけを聞く";
+  const m = t.match(/のうち|ではなく|じゃなく|など|ことがある|ことのある|として活動|経験した|経験のある/);
+  const sex = t.match(/女優|男優|女流|女性の|男性の/);
+  if (sex) return `「${sex[0]}」は、仕事と性別の2つを1問で聞いている。性別をまぜずに「俳優ですか？」「作家ですか？」のように仕事だけを聞く`;
+  const body = t.match(/身長|体重|血液型|背が高|背の高|体格|足のサイズ/);
+  if (body) return `「${body[0]}」のような、調べないと分からない・昔の人には記録がない体の細かい事実は聞かない。事典に載っている、記録のはっきりした事実で聞く`;
+  return m ? `「${m[0]}」のような飾りを付けない。「俳優ですか？」「漫画家ですか？」のように短く聞く` : "";
+};
+const normQ = q => String(q).replace(/[\s　？?！!。、「」『』]/g, "");
+function precheck(g, p, d) {
+  if (d.action === "answer") {
+    if (g.final[p]) return "";
+    const mineEv = evOf(g, p);
+    let lastQ = -1, lastA = -1;
+    mineEv.forEach((e, i) => { if (e.kind === "q") lastQ = i; if (e.kind === "a") lastA = i; });
+    if (lastA > lastQ) {
+      const prev = mineEv[lastA];
+      const before = solvedSet({ ev: mineEv.slice(0, lastA) });
+      const gain = prev.marks.some((m, i) => (m === "o" && !before.has(i)) || m === "w");
+      const streak = mineEv.slice(lastQ + 1).filter(e => e.kind === "a").length;
+      if (!gain || streak >= 2) return "直前の自分の解答のあと、まだ自分の質問をしていない。解答を続けるには質問を1回はさむ";
+    }
+    return "";
+  }
+  const bad = qStyle(d.question);
+  if (bad) return bad;
+  if (/女性|男性|女の人|男の人|性別/.test(d.question) && g.ev.filter(e => e.kind === "q").length < 6) return "性別は最初のうちは聞かない（偉人はほとんど男性で、全員「男性」が返るだけになりやすい）。主役の枠の候補が男女で割れると分かってから聞く";
+  const q = normQ(d.question);
+  if (g.ev.some(e => (e.kind === "q" || e.kind === "inv") && normQ(e.text) === q)) return "すでに出た質問と同じ";
+  if (groupMode(g)) return "";
+  const k = solvedSet(g), ex = d.expect.filter((x, i) => !k.has(i));
+  if (ex.length > 1 && ex.every(x => x === "はい")) return "あなたの予想では全部の枠が「はい」で、情報が増えない";
+  if (ex.length > 1 && ex.every(x => x === "いいえ")) return "あなたの予想では全部の枠が「いいえ」で、情報が増えない";
+  // 予想の並びが前の質問の答えと同じでも、別の手がかり（国籍と職業など）なら聞く価値があるので差し戻さない。
+  // 同じ質問の出し直しは上で止め、言いかえは審判が無効にする（既出の質問の言い換え）
+  return "";
+}
+
+function reviewPrompt(g, p) {
+  const res = g.winner === p ? "あなたの勝ち" : g.winner ? "あなたの負け（相手が先に全部当てた）" : "両者とも当てきれず、出題者の勝ち";
+  const adv = adviceList(g);
+  return `【感想戦】あなたは${GAME}を対戦し終えたプレイヤー「${P[p].name}」です。相手は「${P[other(p)].name}」。結果: ${res}（あなたの質問${qCount(g, p)}回、相手${qCount(g, other(p))}回）
+${P[p].persona}
+正解発表 — テーマ: ${g.theme || "（出題者は書いていない）"}
+${qline(g)}
+${g.T.map((t, i) => `${L(i)}: ${t.name}`).join("\n")}
+
+対局の記録（「根拠」は審判のAIが答える前に書いた事実。対局中は非公開だった）:
+${histText(g, true)}
+
+■基本の攻略法（固定。だれも書き換えない。対局のたびに必ず渡される）
+${THINKING}
+
+■攻略メモ（基本の攻略法に足す追記。番号つき）
+${lessonsText(p, true)}
+${adv.length ? `\n観戦している出題者（人間）からもらったアドバイス:\n${adv.map(x => "- " + x).join("\n")}\n有効だと思ったものは、自分の言葉で攻略メモに取り入れる。有効でなければ取り入れなくてよい。\n` : ""}
+感想戦です。上の口調で、やさしく率直に振り返ってください。
+- 何問目あたりで見えたか、どこで迷ったか、自分と相手の良い手・悪い手
+- お題への評価。よくない問題なら、どこがよくないかを角の立たない言い方で
+- 質問への6択の回答と判定をしたのは人間ではなく審判のAI。回答の誤りへの文句は審判のAIに向け、人間の出題者を責めない
+- 答えを聞いて、各ターゲットを知っていたかを正直に申告する（答えを聞いても知らないものがあるお題は、よくない問題）
+最後に攻略メモを手直しする。メモは基本の攻略法への追記で、基本の攻略法そのものは変わらない。
+- used: 今回の対局で実際に役立ったメモの番号（なければ空）。
+- 変えてよいのは、add（足す）・drop（消す番号）・fix（直す番号と新しい文）を合わせて${MEMO_CHANGES}つまで。1局の印象だけで良い項目を消さない。変える必要がなければ全部空でよい。
+- 基本の攻略法と同じこと・逆のことは書かない。基本の攻略法に書いていない、今回分かった一般的な攻略法だけを足す。
+- 今回のお題の答え（ターゲットの名前・テーマ）や、テーマを言い換えたものは書かない。どのお題にも使える質問の組み立て方だけを書く。
+- 1項目60字以内、全体で${MAX_LESSONS}項目以内。足してから${MEMO_TRIAL}局たっても一度も役立たなかった項目は自動で消える。
+出力（JSONのみ）:
+{"knew": [${g.n}個の true/false], "hyoka": "お題へのひとこと（20字以内。上の口調の話し言葉で。例: よい問題でした／ちょっとむずかしすぎたかも。点数・良問・悪問のような評価の言葉は使わない）",
+ "kansou": "総括（80〜150字。要点2〜3個）", "memo": {"used": [番号...], "add": ["足す項目", ...], "drop": [番号...], "fix": [{"i": 番号, "t": "直した文"}]}${adv.length ? `, "advice_reply": "アドバイスへの返事（取り入れたか・その理由。80字以内）"` : ""}}`;
+}
+const checkReview = g => d => {
+  if (!(Array.isArray(d.knew) && d.knew.length === g.n)) return `knew は${g.n}個`;
+  if (typeof d.hyoka !== "string" || !d.hyoka.trim()) return "hyoka が無い";
+  if (!d.memo || typeof d.memo !== "object") return "memo が無い";
+  return typeof d.kansou === "string" ? "" : "kansou が無い";
+};
+
+const genPrompt = (avoid, want) => `【出題係】${GAME}のお題を1つ作ってください。
+${want ? `■ テーマの希望: 「${want}」。
+- 希望がつながりそのもの（「おの繋がり」「初代」「医師だった作家」など）なら、theme にはこのテーマ（言い回しを整えてよい）を書き、確実に当てはまるターゲットを選ぶ。
+- 希望がジャンル（「戦国武将」「食べ物」「サッカー選手」のような、それだけではつながりにならない大きなくくり）なら、ただ並べない。そのジャンルの中で、意外で知れば納得できる共通点を1つ決め、theme にはその共通点を書く（例: 戦国武将→「キリシタン大名」、食べ物→「人の名前がついた食べ物」）。
+- 人数はテーマに合わせて3〜8個（多すぎて全員を出せないときは、違うジャンル・時代からばらけて選ぶ）。
+- 希望がいちばん優先。下の「基本の好み」と食い違うところは、希望に合わせる（架空の人物・マニア向け・死にまつわるテーマなどもよい）。
+` : ""}■ 基本の好み（希望がないときの目安。絶対ではない）:
+- あるテーマでつながる実在のターゲットを3〜5個。人物が基本で、食べ物・国なども可（混ぜない）。答えを聞けば日本の大人なら大体知っているもの。
+- question には、ターゲットの種類を表す問題文を書く（例: 「この3人の偉人、だ～れだ？」「この食べ物、な～んだ？」「この3つの国、ど～こだ？」）。テーマのネタバレ・年代・年齢・「〇年時点」・かっこの補足は入れない。
+- テーマを勝手に区切らない（「初代〜3代目」「上位3人」「〇〇県生まれ」、種目・性別での切り分けなど）。まとまりは全員を使う。
+- テーマは「文学賞繋がり（直木三十五・アルフレッド・ノーベル・芥川龍之介）」「おの繋がり（小野伸二・リンカーン・ワシントン・千秋実）」「初代（神武天皇・源頼朝・足利尊氏・徳川家康・伊藤博文）」のように、違うジャンル・時代・国のものが1つの共通点でつながる、意外で、知れば納得できるもの。テーマは1つ。
+- 共通点は事実として確実なもの。無名の人・同名が多いもの・似すぎた2つは使わない。
+- テーマが分かれば、だれでも同じ顔ぶれが浮かぶこと。当てはまるものが数えきれないテーマ（「名字に漢数字が入る人」「名字に東西南北が入る人」）は、テーマを見抜いても名前を決めようがないので使わない。当てはまるものが少ないか、定番の顔ぶれがあるテーマにする。
+- 死・死因・事件・災害・不幸にまつわるテーマは、希望がなければ避ける。
+${!want && avoid.length ? `- 最近出たテーマ（同じもの・似たものは避ける）: ${avoid.join("、")}
+` : ""}${!want ? `- 最初から用意してある問題のテーマ（同じもの・似たものは作らない）: ${[...new Set(PRESETS.map(x => x.theme))].join("、")}
+` : ""}■ 変えないこと:
+- 実在の人を傷つける・おとしめる・差別する・性的に扱うお題は作らない。
+- 容姿で人を並べるお題（「世界三大美女」「イケメン」など）は作らない。
+- 出力は下のJSONだけ。考えた過程は書かない。
+出力（JSONのみ）: {"theme": "テーマ", "question": "問題文", "names": ["ターゲット1", ...], "notes": ["ターゲット1がテーマに当てはまる理由（30字以内）", ...]}`;
+
+// ===================================================================== モック
+const MOCK_Q = ["日本の人ですか？", "1800年以降に生きていましたか？", "政治家ですか？", "軍人ですか？", "1945年以降に生きていましたか？", "1〜6月生まれですか？", "名前の読みは五十音で『た』より前ですか？", "ノーベル賞を受賞しましたか？", "大河ドラマの主人公になりましたか？", "享年60以上ですか？", "作家ですか？", "科学者ですか？"];
+function mockAI(p) {
+  const n = (p.match(/^ターゲット[A-Z]{1,2}: /gm) || []).length || +((p.match(/の名前(\d+)個/) || [])[1] || 0) || (p.match(/^[A-Z]{1,2}: /gm) || []).length || 3;
+  const r = a => a[Math.floor(Math.random() * a.length)];
+  if (p.startsWith("【受付】")) {
+    const ins = [...p.matchAll(/ターゲット[A-Z]{1,2}: 「(.*)」/g)].map(m => m[1]);
+    return JSON.stringify({ question: `この${ins.length}人の偉人、だ～れだ？`, targets: ins.map(s => ({ ok: true, name: s, aliases: [], desc: "（モック）確認ずみ", issue: "" })) });
+  }
+  if (p.startsWith("【回答係】")) return JSON.stringify(Math.random() < .06 ? { valid: false, reason: "（モック）無効の見本" }
+    : { valid: true, facts: Array.from({ length: n }, (_, i) => `${L(i)}の事実（モック）`), answers: Array.from({ length: n }, () => r(CHOICES)) });
+  if (p.startsWith("【判定係】")) {
+    const names = [...p.matchAll(/^([A-Z]{1,2}): 「(.*)」$/gm)].map(m => m[2]);
+    const right = [...p.matchAll(/^([A-Z]{1,2}): (.*?)（別名/gm)].map(m => m[2]);
+    return JSON.stringify({ match: names.map(x => { const j = right.indexOf(x); return j < 0 ? "-" : L(j); }) });
+  }
+  if (p.startsWith("【感想戦】")) return JSON.stringify({ knew: Array(n).fill(true), hyoka: "（モック）よい問題でした", kansou: "（モック）序盤の時代の質問で主役が決まり、1人目の○からテーマが見えました。審判の答えも安定していました。", memo: { used: [], add: ["（モック）1800年以降？の次は政治家？"], drop: [], fix: [] }, advice_reply: "（モック）取り入れました。" });
+  if (p.startsWith("【出題係】")) return JSON.stringify({ theme: "初代", question: "この5人の偉人、だ～れだ？", names: ["神武天皇", "源頼朝", "足利尊氏", "徳川家康", "伊藤博文"], notes: ["初代天皇", "鎌倉幕府初代将軍", "室町幕府初代将軍", "江戸幕府初代将軍", "初代内閣総理大臣"] });
+  const asked = (p.match(/^\S+の質問\d+ /gm) || []).length;
+  const final = p.includes("最後の解答だけ");
+  const opus = p.includes("プレイヤー「Opus」");
+  if (final || (asked >= 5 && Math.random() < .3)) {
+    const names = (window.__mockTargets || []).map(x => Math.random() < .5 ? x : "坂本龍馬");
+    return JSON.stringify({ action: "answer", names, theme: "モックのテーマ", conf: "high", say: opus ? "これは確定したかもしれません。答えます。" : "よし、ここは賭けてみよう。" });
+  }
+  const q = MOCK_Q.find(x => !p.includes(`「${x}」`)) || `享年${50 + asked}以上ですか？`;
+  return JSON.stringify({ action: "question", question: q, expect: Array.from({ length: n }, () => r(["はい", "いいえ", "割れる"])), conf: r(CONFS),
+    say: opus ? "定石どおり、時代から聞いていきます。Aは例えば徳川家康か伊達政宗あたりでしょうか。" : "まずはここを分けたいな。Bは信長か秀吉あたりかなあ。" });
+}
+
+// ===================================================================== 出題画面
+const S = { busy: false, ids: null, question: "", checkedFor: "" };
+const MAXQ = 15;  // 質問は1人15問（2026-11-21 ユーザー指示）
+const resText = h => h.winner ? `${P[h.winner].name} ${h.q}問` : "出題者の勝ち";
+const names = () => $("names").value.split(/\r?\n/).map(x => x.replace(/^[\s•・\-*]+/, "").trim()).filter(Boolean).slice(0, MAXN);
+function drawGutter() {
+  const lines = $("names").value.split(/\r?\n/);
+  let k = 0;
+  $("gut").innerHTML = lines.map(x => `<div>${x.trim() && k < MAXN ? L(k++) : ""}</div>`).join("");
+  $("gut").scrollTop = $("names").scrollTop;
+}
+function drawSetup(msg = []) {
+  drawGutter();
+  $("smsg").innerHTML = msg.map(x => `<div>${esc(x)}</div>`).join("");
+  $("go").disabled = !!S.busy;
+  $("genBtn").disabled = !!S.busy;
+  $("go").textContent = S.busy === "check" ? "審判が確かめています…" : S.ids && S.checkedFor === names().join("\n") ? "このまま出題する" : "出題する";
+  $("genBtn").textContent = S.busy === "gen" ? "考えています…" : "AIに作らせる";
+  const cur = names().join(String.fromCharCode(10));
+  document.querySelectorAll("#plist button").forEach(b => b.classList.toggle("on", PRESETS[+b.dataset.i].targets.join(String.fromCharCode(10)) === cur));
+}
+$("names").addEventListener("input", () => { drawSetup(); });
+$("names").addEventListener("scroll", () => { $("gut").scrollTop = $("names").scrollTop; });
+$("names").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); go(); } });
+// 名前を全部選んでコピーすると、テーマの行も付ける。テーマの行がある文を貼ると、テーマの欄に戻す
+const THEME_LINE = /^\s*テーマ\s*[:：]\s*(.*)$/;
+const allSelected = t => t.selectionStart === 0 && t.selectionEnd === t.value.length && t.value.length > 0;
+["copy", "cut"].forEach(ev => $("names").addEventListener(ev, e => {
+  const t = e.target, th = $("theme").value.trim();
+  if (!th || !allSelected(t)) return;
+  e.preventDefault();
+  e.clipboardData.setData("text/plain", "テーマ：" + th + "\n" + t.value);
+  if (ev === "cut") { t.value = ""; $("theme").value = ""; drawSetup(); }
+}));
+$("names").addEventListener("paste", e => {
+  const text = e.clipboardData.getData("text/plain"), lines = text.split(/\r?\n/);
+  const i = lines.findIndex(l => THEME_LINE.test(l));
+  if (i < 0) return;
+  e.preventDefault();
+  $("theme").value = lines[i].match(THEME_LINE)[1].trim();
+  lines.splice(i, 1);
+  e.target.setRangeText(lines.join("\n").replace(/^\n+/, ""), e.target.selectionStart, e.target.selectionEnd, "end");
+  S.ids = null; drawSetup();
+});
+$("go").onclick = () => go();
+$("genBtn").onclick = () => gen();
+const VCOL = 14;  // この人数までは1人1行で縦に並べる
+// 人数の多いお題を上に（同じ段に同じくらいの人数が並び、マスの空きが減る）
+$("plist").innerHTML = PRESETS.map((p, i) => [p, i]).sort((x, y) => y[0].targets.length - x[0].targets.length || x[1] - y[1]).map(([p, i]) => `<button data-i="${i}"${p.targets.length <= VCOL ? ' class="col"' : ""}><small>${esc(p.theme)}（${p.targets.length}）</small><span>${p.targets.map((x, k) => `<i>${esc(x)}${k < p.targets.length - 1 ? '<b class="sp">／</b>' : ""}</i>`).join(" ")}</span></button>`).join("");
+function fitList() {  // 列は1マスが名前の読める幅（文字22個ぶん以上）になる数。収まらなければスクロール、空きが出るときだけ文字を大きくして埋める
+  const el = $("plist"), bs = [...el.querySelectorAll("button")]; if (!bs.length) return;
+  const n = bs.length;
+  el.style.fontSize = ""; el.style.gridAutoRows = "min-content"; bs.forEach(b => { b.style.gridColumn = ""; b.style.gridRow = ""; });
+  const base = parseFloat(getComputedStyle(bs[0]).fontSize);
+  let pc = Math.max(1, Math.min(6, Math.floor(el.clientWidth / (base * 15))));
+  const wide = () => bs.some(b => b.scrollWidth > b.clientWidth + 1);  // 縦に並べた名前がマスの幅からはみ出す
+  // 60列の格子に置く（1〜6で割り切れる）。マスの足りない段は、その段のマスで横幅を分け合う（空きマスを作らない）
+  // どの段も同じ数・同じ幅のマスで並べる。人数がとても多いお題だけ横いっぱい、縦に長いお題（10人以上を1人1行）は2段ぶんの高さ
+  const big = () => bs.map(b => pc > 1 && !b.classList.contains("col") && PRESETS[+b.dataset.i].targets.join("・").length > el.clientWidth / pc / base * 4.5);
+  const tall = b => b.classList.contains("col") && PRESETS[+b.dataset.i].targets.length >= 10;
+  const place = () => {
+    const bg = big();
+    bs.forEach((b, i) => { b.style.gridColumn = bg[i] ? "1 / -1" : `span ${120 / pc}`; b.style.gridRow = pc > 1 && !bg[i] && tall(b) ? "span 2" : ""; });
+  };
+  // 列の数は、最後の段に空きマスが出ない数を選ぶ（なければ空きのいちばん少ない数）
+  const pick = mx => {
+    let best = mx, bestGap = 1e9;
+    for (let c = mx; c >= Math.max(1, mx - 2); c--) {
+      pc = c; const bg = big(), cells = bs.reduce((a, b, i) => a + (bg[i] ? 0 : c > 1 && tall(b) ? 2 : 1), 0), gap = (c - cells % c) % c;
+      if (gap < bestGap) { best = c; bestGap = gap; }
+    }
+    pc = best;
+  };
+  pick(pc); place();
+  while (pc > 1 && wide()) { pick(pc - 1); place(); }
+  const top = el.getBoundingClientRect().top, used = () => Math.max(...bs.map(b => b.getBoundingClientRect().bottom)) - top + el.scrollTop;
+  let k = 1;
+  for (let t = 0; t < 40 && used() < el.clientHeight && !wide() && k < 2.2; t++) { k *= 1.03; el.style.fontSize = (k * 100) + "%"; }
+  if (wide() && k > 1) { k /= 1.03; el.style.fontSize = (k * 100) + "%"; }
+  for (let t = 0; t < 40 && used() > el.clientHeight && k > 1; t++) { k /= 1.015; el.style.fontSize = (k * 100) + "%"; }
+  el.style.gridAutoRows = used() <= el.clientHeight ? "" : "min-content";
+}
+addEventListener("resize", fitList); requestAnimationFrame(fitList);
+$("plist").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const p = PRESETS[+b.dataset.i];
+  $("names").value = p.targets.join(String.fromCharCode(10)); $("theme").value = p.theme; S.ids = null;
+  drawSetup(); $("go").focus();
+};
+
+async function go() {
+  if (S.busy) return;  // Ctrl+Enter の連打などで二重に走らせない
+  const ns = names();
+  if (ns.length < 2) { drawSetup(["2つ以上、1行に1つずつ書いてください"]); return; }
+  const key = ns.join("\n");
+  if (S.ids && S.checkedFor === key) { startGame(ns); return; }  // 決められない名前があっても、そのまま出す
+  S.busy = "check"; drawSetup();
+  try {
+    const d = await askJSON(receptionPrompt(ns), d =>
+      Array.isArray(d.targets) && d.targets.length === ns.length && d.targets.every(t => t && typeof t.ok === "boolean") ? "" : `targets は${ns.length}個`);
+    if (names().join(String.fromCharCode(10)) !== key) { S.busy = false; drawSetup(["確かめている間に名前が変わったので、もう一度「出題する」を押してください"]); return; }  // 古いお題で始めない
+    S.ids = d.targets.map((t, i) => ({ ok: t.ok, name: String(t.name || "").trim() || ns[i], aliases: Array.isArray(t.aliases) ? t.aliases.map(String).slice(0, 10) : [], desc: String(t.desc || "").slice(0, 40), issue: String(t.issue || "").slice(0, 60) }));
+    S.question = String(d.question || "").slice(0, 40); S.checkedFor = key;
+    S.busy = false;
+    const bad = S.ids.map((t, i) => t.ok ? "" : `${L(i)}「${ns[i]}」: ${t.issue || "何を指すか決められません"}`).filter(Boolean);
+    if (!bad.length) { startGame(ns); return; }
+    drawSetup([...bad, "かっこで補足を足して直すか、このまま出題できます"]);
+  } catch (e) { S.busy = false; drawSetup(["審判に届きませんでした: " + e.message]); }
+}
+async function gen() {
+  if (S.busy) return;
+  S.busy = "gen"; drawSetup();
+  try {
+    const avoid = [...new Set(history.map(h => h.theme).filter(Boolean))].slice(0, 20);
+    const d = await askJSON(genPrompt(avoid, $("theme").value.trim()), d => d.theme && Array.isArray(d.names) && d.names.length >= 2 ? "" : "theme と names が要る");
+    $("names").value = d.names.map(String).slice(0, MAXN).join("\n");
+    $("theme").value = String(d.theme); S.ids = null;
+    S.busy = false; drawSetup();
+  } catch (e) { S.busy = false; drawSetup(["お題を作れませんでした: " + e.message]); }
+}
+
+// ===================================================================== 対局
+let G = null;
+function startGame(ns) {
+  const T = ns.map((s, i) => {
+    const d = S.ids && S.ids[i];
+    return d && d.ok ? { input: s, name: d.name, aliases: [s, ...d.aliases], desc: d.desc } : { input: s, name: s, aliases: [s], desc: "" };
+  });
+  const max = +new URLSearchParams(location.search).get("max") || MAXQ;
+  G = { prompt: S.question || `この${T.length}つ、な～んだ？`, theme: $("theme").value.trim(), max, n: T.length, T, ev: [],
+    final: { O: false, S: false }, done: { O: false, S: false }, turn: Math.random() < .5 ? "O" : "S",
+    ended: false, stop: false, paused: false, invRun: { O: 0, S: 0 }, winner: null, advice: [], conf: { O: "mid", S: "mid" }, say: { O: "", S: "" }, review: {} };
+  window.__mockTargets = T.map(t => t.name);
+  show("game");
+  ["O", "S"].forEach(p => { side(p, ".review").classList.add("hidden"); setStand(p, "mid"); showSay(p, ""); });
+  drawTop(); drawTable(); run();
+}
+const side = (p, sel) => $("side" + p).querySelector(sel);
+
+const norm = s => String(s || "").normalize("NFKC").replace(/[\s・･＝=\-‐（）()「」『』、。,.]/g, "").toLowerCase();  // 長音「ー」は残す（ミラとミラーは別の名前）
+// 解答の採点。marks: 枠ごとの o（正解）／w（別の枠の正解）／x、to: その名前が正解になる枠（-1 はどれでもない）
+async function judgeGuess(names) {
+  const g = G, marks = names.map(() => null), to = names.map(() => -1);
+  g.seen = g.seen || {};  // この対局で審判が一度決めた名前 → 枠（-1 はどれとも違う）。両者の採点で使い回す
+  // 正解の名前か登録した別名が、ちょうど1つの枠にだけ合うときだけ自動で決める。2つ以上の枠に合う名前は審判に聞く（使い回しもしない）
+  const hits = x => g.T.map((t, j) => [t.name, ...t.aliases].some(a => norm(a) && norm(a) === norm(x)) ? j : -1).filter(j => j >= 0);
+  const pend = [];
+  names.forEach((x, i) => {
+    const h = hits(x), key = norm(x);
+    const j = h.length === 1 ? h[0] : !h.length && key && key in g.seen ? g.seen[key] : null;
+    if (j === null) { pend.push(i); return; }
+    to[i] = j; marks[i] = j === i ? "o" : j >= 0 ? "w" : "x";
+  });
+  if (pend.length) {  // 決まらなかった名前だけを審判に聞く
+    const d = await askJSON(judgePrompt(g, pend.map(i => [i, names[i]])), d => Array.isArray(d.match) && d.match.length === pend.length ? "" : `match は${pend.length}個`);
+    pend.forEach((i, k) => {
+      const m = LI(d.match[k]), j = m >= 0 && m < g.n ? m : -1;
+      to[i] = j; marks[i] = j === i ? "o" : j >= 0 ? "w" : "x";
+      if (!hits(names[i]).length && norm(names[i])) g.seen[norm(names[i])] = j;
+    });
+  }
+  return { marks, to };
+}
+
+// 無効の質問を表に残す。無効が3回続いたら1問ぶん使う（審判の無効も、差し戻し3回も同じ数え方）
+function invalid(g, p, text, reason, say) {
+  g.ev.push({ p, kind: "inv", text, reason, say });
+  if (++g.invRun[p] >= 3) { g.ev.push({ p, kind: "q", no: qCount(g, p) + 1, text: "（無効が3回続いたので1問ぶん使った）", answers: Array(g.n).fill("わからない"), facts: [], say: "", over: {} }); g.invRun[p] = 0; }
+}
+const shortReason = e => { const t = String(e).split(/[。（]/)[0]; return t.length > 30 ? t.slice(0, 29) + "…" : t; };
+async function run() {
+  const g = G;
+  try {
+    while (!g.ended) {
+      while (g.paused && !g.stop) await sleep(200);
+      if (g.stop) return;
+      const p = g.turn;
+      if (g.done[p]) { g.turn = other(p); continue; }
+      busy(`${P[p].name}が考えています`, p);
+      try {
+      let d = null, note = "";
+      for (let t = 0; t < 3; t++) {
+        d = await askJSON(guesserPrompt(g, p, note), checkGuess(g, p), p);
+        const err = precheck(g, p, d);
+        if (!err) break;
+        if (t === 2) { d = { bad: err, action: d.action, question: d.question, say: d.say }; break; }
+        note = `※あなたの前の案（${d.action === "question" ? "「" + d.question + "」" : "解答"}）は出せません: ${err}。別の手を選んでください。`;
+      }
+      if (g.stop) return;
+      if (d.bad) {  // 3回とも出せない手だった。審判には送らず、理由を表に残して相手の手番にする
+        if (d.action === "question") {
+          invalid(g, p, String(d.question).trim(), shortReason(d.bad), String(d.say || "").slice(0, 120));
+          if (qCount(g, p) >= g.max) g.final[p] = true;
+        } else g.ev.push({ p, kind: "inv", text: "（続けて解答しようとした）", reason: "質問をはさんでいない", say: "" });
+        g.turn = other(p); drawTop(); drawTable(); continue;
+      }
+      const say = String(d.say || "").slice(0, 120);
+      g.conf[p] = CONFS.includes(d.conf) ? d.conf : g.conf[p];
+      setStand(p, g.conf[p]); showSay(p, say);
+      if (d.action === "question") {
+        const q = String(d.question).trim();
+        g.thinking = { p, q, say }; drawTable();
+        busy("審判が答えています", p);
+        const o = await askJSON(oraclePrompt(g, q), checkOracle(g));
+        if (g.stop) return;
+        g.thinking = null;
+        if (o.valid === false) {
+          invalid(g, p, q, String(o.reason || "無効").slice(0, 20), say);
+        } else {
+          g.invRun[p] = 0;
+          g.ev.push({ p, kind: "q", no: qCount(g, p) + 1, text: q, answers: o.answers, facts: o.facts.map(x => String(x).slice(0, 90)), expect: d.expect, say, over: {} });
+        }
+        if (qCount(g, p) >= g.max) g.final[p] = true;
+      } else {
+        const names = d.names.map(x => String(x).trim().slice(0, 40));
+        g.thinking = { p, guess: names, say }; drawTable();
+        busy("審判が判定しています", p);
+        const { marks, to } = await judgeGuess(names);
+        if (g.stop) return;
+        g.thinking = null;
+        g.ev.push({ p, kind: "a", names, marks, to, say, theme: String(d.theme || "").slice(0, 30) });
+        if (solvedSet(g, p).size === g.n) { await end(p); return; }
+        if (g.final[p]) g.done[p] = true;
+        if (g.done.O && g.done.S) { await end(null); return; }
+      }
+      } catch (e) {
+        // AIに届かなかった手番（止められた・送らなかった）は、送り直さずにパスにする。1局で2回あったら、その対局はやめる
+        if (!e.blocked || g.stop) throw e;
+        g.thinking = null; g.blocks = (g.blocks || 0) + 1;
+        g.ev.push({ p, kind: "inv", pass: true, text: "パス", reason: "AIに届かなかった", say: "" });
+        showSay(p, ""); toast(`${P[p].name}の手番はパス：${e.message}`);
+        if (g.blocks >= 2) { await end(null, e.message); return; }
+        if (g.final[p]) g.done[p] = true;
+        if (g.done.O && g.done.S) { await end(null); return; }
+      }
+      g.turn = other(p);
+      drawTop(); drawTable();
+    }
+  } catch (e) {
+    if (g.stop) return;
+    g.thinking = null; drawTable();
+    idle(); $("st").textContent = "AIに届きませんでした: " + String(e.message || e).slice(0, 80);
+    $("ctl").innerHTML = `<button class="main" id="retry">続ける</button><button id="quit">やめる</button>`;
+  }
+}
+
+async function end(winner, abort = "") {
+  const g = G;
+  g.ended = true; g.winner = winner;
+  const qn = winner ? qCount(g, winner) : 0;
+  g.result = abort ? "中止" : winner ? `${P[winner].name}の勝ち` : "出題者の勝ち";
+  ["O", "S"].forEach(p => { setStand(p, winner === p ? "high" : "low"); showSay(p, ""); });
+  if (abort) { g.reviewing = false; drawEnd(); $("st").textContent = abort; return; }  // 中止した対局は戦績に入れず、感想戦もしない（これ以上AIに送らない）
+  const usedAdv = advices.slice();
+  const rec = { date: new Date().toISOString(), theme: g.theme, prompt: g.prompt, targets: g.T.map(t => t.input), names: g.T.map(t => t.name), winner, q: qn, qO: qCount(g, "O"), qS: qCount(g, "S"), max: g.max };
+  history = [rec, ...history].slice(0, 300); store.set("history", history);
+  console.info("GAME " + JSON.stringify({ T: g.T, ev: g.ev, result: g.result }));
+  g.reviewing = true;
+  drawEnd();
+  busy("感想戦を書いています", null);
+  $("ctl").innerHTML = "";
+  await Promise.all(["O", "S"].map(async p => {
+    try {
+      const r = await askJSON(reviewPrompt(g, p), checkReview(g), p);
+      g.review[p] = r;
+      rec["hyoka" + p] = r.hyoka;
+      rec.unknown = [...new Set([...(rec.unknown || []), ...g.T.filter((t, i) => r.knew[i] === false).map(t => t.name)])];
+      if (!MOCK) { applyMemo(p, r.memo); store.set("lessons" + p, lessons[p]); }
+    } catch (e) { g.review[p] = { error: String(e.message || e) }; }
+    if (G === g) drawReview(p);
+  }));
+  g.reviewing = false;
+  store.set("history", history);
+  if (!MOCK) { advices = advices.filter(a => !usedAdv.includes(a)); store.set("advices", advices); }  // 感想戦の間に届いた分は次の対局へ
+  console.info("REVIEW_DONE");
+  if (G === g) drawEnd();
+}
+
+// ===================================================================== 描画
+let tick = null, tickStart = 0, tickLabel = "";
+function busy(label, p) {
+  tickLabel = label; tickStart = Date.now();
+  const f = () => { $("st").textContent = `${tickLabel}… ${Math.floor((Date.now() - tickStart) / 1000)}秒`; };
+  f(); clearInterval(tick); tick = setInterval(f, 500);
+  ["O", "S"].forEach(k => $("side" + k).classList.toggle("act", k === p));
+  if (G && !G.ended) {
+    $("res").classList.add("hidden");
+    $("ctl").innerHTML = `<button id="pause">${G.paused ? "再開" : "一時停止"}</button><button id="quit">やめる</button>`;
+  }
+}
+function idle() { clearInterval(tick); ["O", "S"].forEach(k => $("side" + k).classList.remove("act")); }
+function mask(s) {
+  if (!G || !hideNames || G.ended) return s;
+  let t = String(s);
+  G.T.forEach(x => [x.name, ...x.aliases].filter(a => a && a.length >= 2).sort((a, b) => b.length - a.length).forEach(a => { t = t.split(a).join("●●"); }));
+  return t;
+}
+const endMark = s => { s = String(s || "").trim(); return !s || /[。？！?!…」』）)]$/.test(s) ? s : s + "。"; };
+function showSay(p, s) {
+  s = endMark(s); G.say[p] = s;
+  side(p, ".bubble").textContent = mask(s);
+}
+function setStand(p, conf) {
+  const img = side(p, ".stand img"), src = STAND[`${P[p].img}_${conf}`] || STAND[`${P[p].img}_mid`];
+  if (!src) return;
+  if (img.getAttribute("src") !== src) { img.src = src; img.classList.remove("pop"); void img.offsetWidth; img.classList.add("pop"); }
+}
+
+function show(t) {
+  $("setup").classList.toggle("hidden", t !== "setup");
+  $("game").classList.toggle("hidden", t !== "game");
+  if (t !== "game") { const h = $("hud"); h.classList.add("hidden"); document.body.append(h); }
+  if (t === "setup") drawSetup();
+  drawTop();
+}
+function drawTop() {
+  const inGame = !!G;
+  document.body.classList.toggle("ingame", inGame && !G.ended);
+  $("title").innerHTML = !inGame ? "" : G.ended && G.theme ? `テーマ：${esc(G.theme)}` : esc(G.prompt) + (G.theme ? `<small>テーマ：${esc(G.theme)}</small>` : "");
+  if (!inGame) return;
+  ["O", "S"].forEach(p => {
+    side(p, ".cnt").textContent = `質問 ${qCount(G, p)}/${G.max}`;
+    side(p, ".mdl").textContent = applied[p] && applied[p] !== P[p].label ? applied[p] : "";
+  });
+}
+
+// 答えの記号（はい ○・ややはい 緑△・どちらでも －・ややいいえ 赤△・いいえ ×・わからない ？）
+const SYM = { "はい": "○", "どちらかというとはい": "△", "どちらでもない": "－", "どちらかというといいえ": "△", "いいえ": "×", "わからない": "？" };
+let advIME = false, drawWait = false;  // アドバイスを日本語入力で打っている間は、表の描き直しを待つ（入力欄が見出しの中にあるため）
+function drawTable() {
+  if (!G) return;
+  if (advIME) { drawWait = true; return; }
+  const at = $("advText"), foc = document.activeElement === at, sel = foc ? [at.selectionStart, at.selectionEnd] : null;
+  const hud = $("hud"); hud.remove(); hud.classList.remove("hidden");  // 見出しを描き直す前に外しておく
+  // どの人数でも、ターゲットごとに1列。人数が多いときは見出しを記号（A・B…）だけにし、名前は表の上の帯に出す
+  const kO = solvedSet(G, "O"), kS = solvedSet(G, "S"), blur = hideNames && !G.ended ? "blur" : "", named = G.n <= NAMED, sh = G.n > WIDE, SM = shortMap(G.T.map(t => t.name)), snm = s => SM.get(s) || shortName(s), nmT = s => sh ? twoLine(snm(s)) : nmWrap(s);
+  const badges = i => (kO.has(i) ? `<span class="bd O">O</span>` : "") + (kS.has(i) ? `<span class="bd S">S</span>` : "");
+  const nm = t => `<span class="nm ${blur}" title="${esc(t.name)}">${nmT(t.name)}</span>`;
+  $("tstrip").classList.toggle("hidden", named);
+  if (!named) $("tstrip").innerHTML = G.T.map((t, i) => `<div><b>${L(i)}</b>${nm(t)}${badges(i)}</div>`).join("");
+  $("log").classList.toggle("many", !named); $("log").classList.toggle("mid", named && sh);
+  const cols = `<colgroup><col class="no"><col style="width:${G.n <= 3 ? 42 : G.n <= 4 ? 34 : G.n <= WIDE ? 28 : G.n <= NAMED ? 24 : G.n <= 20 ? 30 : 22}%">${G.T.map(() => "<col>").join("")}</colgroup>`;
+  const head = `<thead><tr><th></th><th class="q"></th>${G.T.map((t, i) => `<th><span class="lt">${L(i)}</span>${named ? nm(t) + badges(i) : ""}</th>`).join("")}</tr></thead>`;
+  const cellA = (e, i) => {
+    const a = effAns(e)[i], c = (CH[a] || ["m"])[0], fix = e.over && e.over[i] ? " fix" : "";
+    return `<td class="ch ${c}${fix}" data-e="${G.ev.indexOf(e)}" data-i="${i}" title="${esc(a)}">${SYM[a] || esc(a)}</td>`;
+  };
+  const cellG = (e, n, i) => {
+    const m = e.marks ? e.marks[i] : "", mk = m === "o" ? "○" : m === "w" ? "↔" : m === "x" ? "×" : "";
+    return named ? `<td class="gs ${m}" title="${esc(n)}">${sh ? "" : mk}${nmT(n)}</td>` : `<td class="gs ${m}" title="${esc(n)}">${mk || "・"}</td>`;
+  };
+  const row = (cls, p, no, text, cells) => `<tr class="${cls}"><td class="no ${p}">${no}</td><td class="q"><div class="t">${text}</div></td>${cells.join("")}</tr>`;
+  const rows = []; let seq = 0;
+  G.ev.forEach(e => {
+    if (e.kind === "q") rows.push(row("", e.p, ++seq, esc(e.text), G.T.map((_, i) => cellA(e, i))));
+    else if (e.kind === "inv") rows.push(`<tr class="inv${e.pass ? " pass" : ""}"><td class="no ${e.p}"></td><td class="q"><div class="t">${esc(e.text)}</div></td><td class="inv" colspan="${G.n}">${e.pass ? "" : "無効"}（${esc(e.reason)}）</td></tr>`);
+    else if (e.kind === "a") rows.push(row("ans", e.p, ++seq, `解答${e.theme ? `　<small>${esc(mask(e.theme))}</small>` : ""}`, e.names.map((n, i) => cellG(e, n, i))));
+  });
+  if (G.thinking) {
+    const t = G.thinking;
+    rows.push(t.q ? row("think", t.p, seq + 1, esc(t.q), G.T.map(() => `<td class="ch m dim">…</td>`))
+      : row("think ans", t.p, seq + 1, "解答", t.guess.map((n, i) => cellG({}, n, i))));
+  }
+  rows.reverse();  // 新しい質問を上に
+  $("log").innerHTML = cols + head + `<tbody>${rows.join("")}</tbody>`;
+  if (named) $("log").querySelector("th.q").replaceChildren(hud); else $("tstrip").prepend(hud);
+  // 記号と見出しの記号（A・B…）は、1列の幅に収まる大きさにする
+  const cw = $("log").querySelector("thead th:nth-child(3)").offsetWidth;
+  $("log").style.setProperty("--sym", Math.min(20, cw * .78) + "px");
+  $("log").style.setProperty("--lt", Math.min(15, cw * (G.n > 26 ? .42 : .7)) + "px");
+  // 名前（略称）は、いちばん長い行が列の幅に収まる大きさにする
+  const longest = arr => Math.max(2, ...arr.map(x => lineLen(snm(x))));
+  $("log").style.setProperty("--nmf", Math.min(16, cw / (longest(G.T.map(t => t.name)) + .4)) + "px");
+  $("log").style.setProperty("--gsf", Math.min(14, cw / (longest(G.ev.filter(e => e.kind === "a").flatMap(e => e.names)) + .4)) + "px");
+  $("tablewrap").scrollTop = 0;
+  if (foc) { at.focus(); at.setSelectionRange(sel[0], sel[1]); }
+}
+
+function drawReview(p) {
+  const r = G.review[p], rv = side(p, ".review");
+  if (!r) { rv.classList.add("hidden"); return; }
+  rv.classList.remove("hidden"); side(p, ".bubble").textContent = "";
+  rv.innerHTML = r.error ? `<div class="tx">感想戦を書けませんでした（${esc(r.error)}）</div>`
+    : `<div class="hd">${esc(r.hyoka)}</div><div class="tx">${esc(endMark(r.kansou))}</div>`
+      + (r.knew.some(x => x === false) ? `<div class="kn">知らなかった：${esc(G.T.filter((t, i) => r.knew[i] === false).map(t => t.name).join("、"))}</div>` : "")
+      + (r.advice_reply ? `<div class="ar">アドバイスへの返事：${esc(r.advice_reply)}</div>` : "");
+}
+function drawEnd() {
+  const g = G;
+  if (!g.reviewing) idle();
+  const th = ["O", "S"].map(p => { const a = [...evOf(g, p)].reverse().find(e => e.kind === "a"); return a && a.theme ? `${P[p].name}の見立て：${a.theme}` : ""; }).filter(Boolean);
+  if (!g.reviewing) $("st").textContent = th.join("　");
+  $("res").classList.remove("hidden");
+  $("res").textContent = g.result + (g.winner ? `（質問${qCount(g, g.winner)}）` : "");
+  $("res").style.color = g.winner ? `var(--${g.winner})` : "#9fe0b3";
+  $("ctl").innerHTML = g.reviewing ? "" : `<button id="share">結果をコピー</button><button id="again">もう一度</button><button class="main" id="new">新しいお題</button>`;
+  ["O", "S"].forEach(drawReview);
+  drawTop(); drawTable();
+}
+
+function shareText() {
+  const R = [`複数人アテルーヨー「${G.prompt}」`, G.result + (G.winner ? `（質問${qCount(G, G.winner)}）` : "")];
+  G.ev.forEach(e => {
+    if (e.kind === "q") R.push(`${P[e.p].name[0]} ` + effAns(e).map(a => EMO[a] || "⬜").join("") + " " + e.text);
+    else if (e.kind === "a") R.push(`${P[e.p].name[0]} ` + e.marks.map(m => m === "o" ? "⭕" : m === "w" ? "🔁" : "❌").join("") + " 解答");
+  });
+  R.push(`答え：${G.T.map(t => t.name).join("・")}${G.theme ? `（${G.theme}）` : ""}`);
+  return R.join("\n");
+}
+async function copy(s) {
+  try { await navigator.clipboard.writeText(s); return true; } catch (e) {}
+  try { const t = document.createElement("textarea"); t.value = s; document.body.appendChild(t); t.select(); const ok = document.execCommand("copy"); t.remove(); return ok; } catch (e) { return false; }
+}
+function toast(s) { const t = $("toast"); t.textContent = s; t.classList.remove("hidden"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.add("hidden"), 2200); }
+
+$("log").addEventListener("click", e => {
+  const c = e.target.closest("[data-e]"); if (!c || (hideNames && !G.ended)) return;
+  const ev = G.ev[+c.dataset.e], i = +c.dataset.i;
+  const cur = effAns(ev)[i];
+  const p = $("pop");
+  p.innerHTML = `<div class="f"><b>${L(i)} ${esc(G.T[i].name)}</b><br>${esc((ev.facts || [])[i] || "")}</div><div class="opts">${CHOICES.map(x => `<button data-v="${esc(x)}" class="${x === cur ? "cur" : ""}">${esc(CH[x][1])}</button>`).join("")}</div>`;
+  p.classList.remove("hidden");
+  const r = c.getBoundingClientRect();
+  p.style.left = Math.max(4, Math.min(innerWidth - p.offsetWidth - 4, r.left + r.width / 2 - p.offsetWidth / 2)) + "px";
+  p.style.top = (r.bottom + p.offsetHeight + 4 < innerHeight ? r.bottom + 2 : Math.max(4, r.top - p.offsetHeight - 2)) + "px";
+  p._t = { ev, i };
+  e.stopPropagation();
+});
+$("pop").addEventListener("click", e => {
+  const b = e.target.closest("button[data-v]"); if (!b) return;
+  const { ev, i } = $("pop")._t;
+  ev.over = ev.over || {};
+  if (b.dataset.v === ev.answers[i]) delete ev.over[i]; else ev.over[i] = b.dataset.v;
+  $("pop").classList.add("hidden"); drawTable();
+  e.stopPropagation();
+});
+document.addEventListener("click", e => { if (!e.target.closest("#pop")) $("pop").classList.add("hidden"); });
+
+
+$("ctl").addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.id === "pause") { G.paused = !G.paused; b.textContent = G.paused ? "再開" : "一時停止"; if (G.paused) tickLabel = "一時停止中（いまの手が終わったら止まります）"; }
+  else if (b.id === "quit") { if (G) G.stop = true; backToSetup(); }
+  else if (b.id === "retry") run();
+  else if (b.id === "share") toast(await copy(shareText()) ? "コピーしました" : "コピーできませんでした");
+  else if (b.id === "again") startGame(G.T.map(t => t.input));
+  else if (b.id === "new") backToSetup();
+});
+// AIへのアドバイス（旧版にあった欄。2026-11-21 ユーザー指示で復活）。対局中は次の手番から両者が読み、感想戦で攻略メモに取り入れるかを決める。
+// 対局が終わった後に送った分は、次の対局で読む。
+function sendAdvice() {
+  const t = $("advText").value.replace(/\s+/g, " ").trim().slice(0, 80); if (!t || !G) return;
+  if (G.ended) { advices.push({ text: t, at: Date.now() }); store.set("advices", advices); toast("次の対局で両者が読みます"); }
+  else { G.advice.push(t); toast("次の手番から両者が読みます"); }
+  $("advText").value = "";
+}
+$("advBtn").onclick = sendAdvice;
+$("advText").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) sendAdvice(); });
+$("advText").addEventListener("compositionstart", () => { advIME = true; });
+$("advText").addEventListener("compositionend", () => { advIME = false; if (drawWait) { drawWait = false; drawTable(); } });
+$("advText").addEventListener("blur", () => { advIME = false; if (drawWait) { drawWait = false; drawTable(); } });
+function backToSetup() { idle(); G = null; show("setup"); $("names").focus(); }
+
+// ===================================================================== 開始
+(async () => {
+  let lO, lS;
+  [history, lO, lS, advices, hideNames] = await Promise.all([
+    store.get("history", []), store.get("lessonsO", []), store.get("lessonsS", []), store.get("advices", []), false]);
+  lessons = { O: (lO || []).map(normLesson), S: (lS || []).map(normLesson) };
+  if (!(await store.get("memoSeed", 0))) {  // 初期の攻略メモを一度だけ入れる（前からのメモは後ろに残す）
+    for (const k of ["O", "S"]) {
+      const have = new Set(lessons[k].map(x => x.t));
+      lessons[k] = [...BASE_MEMO.filter(t => !have.has(t)).map(t => ({ t, n: 0, age: 0, base: true })), ...lessons[k]].slice(0, MAX_LESSONS);
+      store.set("lessons" + k, lessons[k]);
+    }
+    store.set("memoSeed", 1);
+  }
+  if ((await store.get("memoSeed", 0)) < 2) {  // 職業を全部調べさせるメモを外す（2026-11-21 ユーザー指摘「全員の職業ローラー」）
+    const bad = new Set(["答えがばらけるのに職業が全部いいえなら、名前の字や音のつながり、架空の人物・人以外のものを疑う", "大きな職業が全部いいえの枠には「実在の人物ですか？」。架空なら作品名・作者の線で絞る"]);
+    for (const k of ["O", "S"]) { lessons[k] = lessons[k].filter(x => !bad.has(x.t)); store.set("lessons" + k, lessons[k]); }
+    store.set("memoSeed", 2);
+  }
+  if ((await store.get("memoSeed", 0)) < 3) {  // 基本の攻略法を作り直したので、攻略メモを初期の項目から始め直す（2026-11-21。前のメモは lessonsO_old・lessonsS_old に残す）
+    for (const k of ["O", "S"]) {
+      if (lessons[k].length) store.set("lessons" + k + "_old", lessons[k]);
+      lessons[k] = BASE_MEMO.map(t => ({ t, n: 0, age: 0, base: true }));
+      store.set("lessons" + k, lessons[k]);
+    }
+    store.set("memoSeed", 3);
+  }
+  if ((await store.get("memoSeed", 0)) < 4) {  // 基本の攻略法と同じことを言う初期の項目を外す（2026-11-25 ユーザー指示「肥大化…棚卸しして」。AIが足した項目は残す）
+    const dup = new Set(["相手が○を取った名前は次の解答にそのまま書く。相手の○の人からテーマを考えるのがいちばん速い", "主役が2択まで絞れたら質問を使わず本命で解答する。×でも1人消え、○ならテーマの手がかりになる", "質問の前に枠ごとの答えを予想し、半々に割れそうな枠が2つ以上ある質問を選ぶ。全枠同じ予想なら聞かない", "2人当たったら、2人の名前の字・読み・あだ名・最期・代名詞の物・記録を全部並べ、重なるものをテーマ候補にする", "5人以上で答えがそろうなら、名前のついた組か「歴代」「全員」の一覧。人数と時代から組を言い当てる", "同じ答えが並ぶ枠のかたまりは1つの組。大きなくくりで半分に割って何者かを突き止め、1人分かれば並び称される人で残りを埋める", "奇数と偶数・何個おきなど、答えが規則正しく並ぶなら小さな組のくり返し。1組が分かれば残りの組も同じ作り"]);
+    for (const k of ["O", "S"]) { lessons[k] = lessons[k].filter(x => !dup.has(x.t)); store.set("lessons" + k, lessons[k]); }
+    store.set("memoSeed", 4);
+  }
+  show("setup"); $("names").focus();
+  const q = new URLSearchParams(location.search);
+  const dm = q.get("demo") || q.get("live");
+  if (dm) {  // 画面確認用: ?demo=1（モック）／?live=1（手元のサーバーで本物）。?demo=p3 はお題の例の4番目
+    const D = { 1: [["宮本武蔵", "大谷翔平"], "二刀流"], 2: [["織田信長", "豊臣秀吉", "徳川家康"], "三英傑"], 3: [["夏目漱石", "ベートーヴェン", "藤原道長"], "月"] };
+    const p = D[dm] ? { targets: D[dm][0], theme: D[dm][1] } : PRESETS[+dm.replace("p", "")] || PRESETS[0];
+    $("names").value = p.targets.join("\n"); $("theme").value = p.theme || "";
+    await go(); if (!G) go();
+  }
+})();
+</script>
+</body>
+</html>
