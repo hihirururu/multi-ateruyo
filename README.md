@@ -13,6 +13,9 @@
 ## 遊び方
 
 ### claude.ai で遊ぶ（いちばん手軽）
+公開中: https://claude.ai/artifact/4Z2f7uuA5g6AGQ7fqJGy6R （Claude へのログインが必要です。AI を使うには、サインインして開いてください）
+
+自分で置くときは:
 1. claude.ai で新しいチャットを始めます。
 2. `ateruyo_artifact.html` を添付して、次のように頼みます。
    > 添付したHTMLを、一字一句変えずにそのままHTMLのArtifactとして表示してください。
