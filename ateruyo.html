@@ -305,7 +305,7 @@ const aiReady = (async () => {
 })();
 function dbg(s) { const d = $("dbg"); d.textContent = [d.textContent, s].filter(Boolean).join(" "); d.classList.remove("hidden"); }
 
-// ---- 歯止め（2026-11-21 ユーザー指示「絶対に止められるような文章はおくらない」）
+// ---- 歯止め（AIの安全確認に止められる文を、くり返し送らない）
 // server.py と同じ決まりを、ページの中でもかける（claude.ai のページにはサーバーがないため）。
 //  1. 止められたことのある書き方（SHAPE_BAN）が入った文は、送らずに断る
 //  2. 止められた文と同じ文は、二度と送らない。理由の分からない失敗をした文は、10分は送らない
@@ -880,7 +880,7 @@ function mockAI(p) {
 
 // ===================================================================== 出題画面
 const S = { busy: false, ids: null, question: "", checkedFor: "" };
-const MAXQ = 15;  // 質問は1人15問（2026-11-21 ユーザー指示）
+const MAXQ = 15;  // 質問は1人15問
 const resText = h => h.winner ? `${P[h.winner].name} ${h.q}問` : "出題者の勝ち";
 const names = () => $("names").value.split(/\r?\n/).map(x => x.replace(/^[\s•・\-*]+/, "").trim()).filter(Boolean).slice(0, MAXN);
 function drawGutter() {
@@ -1326,7 +1326,7 @@ $("ctl").addEventListener("click", async e => {
   else if (b.id === "again") startGame(G.T.map(t => t.input));
   else if (b.id === "new") backToSetup();
 });
-// AIへのアドバイス（旧版にあった欄。2026-11-21 ユーザー指示で復活）。対局中は次の手番から両者が読み、感想戦で攻略メモに取り入れるかを決める。
+// AIへのアドバイス。対局中は次の手番から両者が読み、感想戦で攻略メモに取り入れるかを決める。
 // 対局が終わった後に送った分は、次の対局で読む。
 function sendAdvice() {
   const t = $("advText").value.replace(/\s+/g, " ").trim().slice(0, 80); if (!t || !G) return;
@@ -1355,7 +1355,7 @@ function backToSetup() { idle(); G = null; show("setup"); $("names").focus(); }
     }
     store.set("memoSeed", 1);
   }
-  if ((await store.get("memoSeed", 0)) < 2) {  // 職業を全部調べさせるメモを外す（2026-11-21 ユーザー指摘「全員の職業ローラー」）
+  if ((await store.get("memoSeed", 0)) < 2) {  // 職業を全部調べさせるメモを外す
     const bad = new Set(["答えがばらけるのに職業が全部いいえなら、名前の字や音のつながり、架空の人物・人以外のものを疑う", "大きな職業が全部いいえの枠には「実在の人物ですか？」。架空なら作品名・作者の線で絞る"]);
     for (const k of ["O", "S"]) { lessons[k] = lessons[k].filter(x => !bad.has(x.t)); store.set("lessons" + k, lessons[k]); }
     store.set("memoSeed", 2);
@@ -1368,7 +1368,7 @@ function backToSetup() { idle(); G = null; show("setup"); $("names").focus(); }
     }
     store.set("memoSeed", 3);
   }
-  if ((await store.get("memoSeed", 0)) < 4) {  // 基本の攻略法と同じことを言う初期の項目を外す（2026-11-25 ユーザー指示「肥大化…棚卸しして」。AIが足した項目は残す）
+  if ((await store.get("memoSeed", 0)) < 4) {  // 基本の攻略法と同じことを言う初期の項目を外す（AIが足した項目は残す）
     const dup = new Set(["相手が○を取った名前は次の解答にそのまま書く。相手の○の人からテーマを考えるのがいちばん速い", "主役が2択まで絞れたら質問を使わず本命で解答する。×でも1人消え、○ならテーマの手がかりになる", "質問の前に枠ごとの答えを予想し、半々に割れそうな枠が2つ以上ある質問を選ぶ。全枠同じ予想なら聞かない", "2人当たったら、2人の名前の字・読み・あだ名・最期・代名詞の物・記録を全部並べ、重なるものをテーマ候補にする", "5人以上で答えがそろうなら、名前のついた組か「歴代」「全員」の一覧。人数と時代から組を言い当てる", "同じ答えが並ぶ枠のかたまりは1つの組。大きなくくりで半分に割って何者かを突き止め、1人分かれば並び称される人で残りを埋める", "奇数と偶数・何個おきなど、答えが規則正しく並ぶなら小さな組のくり返し。1組が分かれば残りの組も同じ作り"]);
     for (const k of ["O", "S"]) { lessons[k] = lessons[k].filter(x => !dup.has(x.t)); store.set("lessons" + k, lessons[k]); }
     store.set("memoSeed", 4);

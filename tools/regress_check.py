@@ -137,7 +137,7 @@ with sync_playwright() as pw:
     expect("国籍の後の「作家ですか？」（予想が同じ並び）は通る", r["writer"] == "")
     expect("裏返しの並びでも差し戻さない（言いかえは審判が無効にする）", r["flip"] == "")
     expect("同じ質問の出し直しは止まる", "同じ" in r["same"])
-    expect("誕生月の質問は通る（2026-11-26）", r["month"] == "")
+    expect("誕生月の質問は通る", r["month"] == "")
     expect("身長の質問は止まる", "身長" in r["tall"])
     p.close()
 
