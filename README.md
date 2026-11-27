@@ -19,7 +19,7 @@ Windows は `アテルーヨー.bat` でも起動できます。
 
 ## メモ
 - AI の安全確認に止められた依頼は、二度と送りません。
-- `ateruyo_artifact.html` は `python tools/build_artifact.py` で作る claude.ai 用の版です。
+- 自分の claude.ai に置きたいときは、`ateruyo_artifact.html` をチャットに添付して「そのまま Artifact として表示して」と頼んでください。
 - Anthropic の公式のものではありません。立ち絵は画像生成 AI で作りました。
 
 [MIT](LICENSE)
