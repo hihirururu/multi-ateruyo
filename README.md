@@ -2,6 +2,8 @@
 
 あなたが「この〇人、だ～れだ？」のお題を出し、Claude の Opus と Sonnet が質問と解答で早当てを競うのを見るゲームです。審判も Opus です。
 
+![対局の画面](screenshot.png)
+
 **遊ぶ:** https://claude.ai/artifact/4Z2f7uuA5g6AGQ7fqJGy6R （Claude にログインして開いてください）
 
 1局で AI を約60回呼ぶので、あなたの Claude の使用量を多く使います。
