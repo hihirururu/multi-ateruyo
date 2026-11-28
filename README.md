@@ -7,6 +7,8 @@ youtuberのラディカルなたくろうさんがやっている動画企画を
 
 ![対局の画面](screenshot.png)
 
+![claude.ai で遊んだ「二刀流」の対局](nitoryu.png)
+
 **Claude artifactで遊ぶ:** https://claude.ai/artifact/4Z2f7uuA5g6AGQ7fqJGy6R 
 Claudeにログインして開いてください。Claudeを用いない場合は簡易AIなので質問も回答も無茶苦茶です。
 1局でclaudeを約60回呼ぶので、あなたのClaudeの使用量を多く使用します。
